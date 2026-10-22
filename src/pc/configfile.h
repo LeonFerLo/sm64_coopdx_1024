@@ -14,8 +14,17 @@
 #define MAX_SAVE_NAME_STRING 32
 
 #define DEFAULT_PORT 7777
+/* el fork de 1024 usa su propio servidor coopnet: make SMNET=1 COOPNET_SERVIDOR=host[:puerto] */
+#if defined(SMNET) && defined(SMNET_COOPNET_IP)
+#define DEFAULT_COOPNET_IP SMNET_COOPNET_IP
+#else
 #define DEFAULT_COOPNET_IP "net.coop64.us"
+#endif
+#if defined(SMNET) && defined(SMNET_COOPNET_PORT)
+#define DEFAULT_COOPNET_PORT SMNET_COOPNET_PORT
+#else
 #define DEFAULT_COOPNET_PORT 34197
+#endif
 
 typedef struct {
     unsigned int x, y, w, h;
@@ -64,6 +73,14 @@ extern enum RefreshRateMode configFramerateMode;
 extern unsigned int configFrameLimit;
 extern unsigned int configInterpolationMode;
 extern unsigned int configDrawDistance;
+#ifdef SMNET
+extern unsigned int configSmnetCrowd;
+extern unsigned int configSmnetFarMode;
+extern bool         configSmnetFarAnimated;
+extern bool         configSmnetLowFull;
+extern unsigned int configSmnetUpload;
+extern bool         configSmnetTelemetry;
+#endif
 // sound settings
 extern unsigned int configMasterVolume;
 extern unsigned int configMusicVolume;

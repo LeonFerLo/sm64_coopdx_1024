@@ -1,3 +1,6 @@
+#ifdef SMNET
+#include "pc/network/smnet/ns_smnet.h"
+#endif
 #include <stdio.h>
 #include "../network.h"
 #include "pc/djui/djui.h"
@@ -66,6 +69,10 @@ void network_send_chat(char* message, u8 globalIndex) {
     static bool sMatched = false;
     sMatched = sMatched || (found_match(message));
     if (sMatched) { return; }
+#ifdef SMNET
+    /* modo masivo: a todos los de la partida por smnet (no solo a los slots) */
+    if (ns_smnet_massive()) { ns_smnet_send_chat(message); return; }
+#endif
 
     u16 messageLength = strlen(message);
     struct Packet p = { 0 };

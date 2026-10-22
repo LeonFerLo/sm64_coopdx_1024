@@ -693,6 +693,9 @@ static char *get_update_path(void) {
 }
 
 bool can_update_game(void) {
+#ifdef SMNET
+    return false;   /* el actualizador oficial pisaría el fork con la versión oficial */
+#endif
     // the file is not guaranteed to exist, so make sure we have the updater installed
     return fs_sys_file_exists(get_update_path()) && gUpdateMessage;
 }

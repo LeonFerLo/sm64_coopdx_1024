@@ -38,6 +38,9 @@
 #include "pc/network/version.h"
 #include "pc/network/socket/socket.h"
 #include "pc/network/network_player.h"
+#ifdef SMNET
+#include "pc/network/smnet/ns_smnet.h"
+#endif
 #include "pc/update_checker.h"
 #include "pc/djui/djui.h"
 #include "pc/djui/djui_unicode.h"
@@ -184,6 +187,9 @@ static inline void patch_interpolations(f32 delta) {
 static void compute_fps(f64 curTime) {
     u32 fps = round((f64) sDrawnFrames / MAX(0.001, curTime - sFpsTimeLast));
     djui_fps_display_update(fps);
+#ifdef SMNET
+    { extern void ns_smnet_note_fps(unsigned fps); ns_smnet_note_fps(fps); }   /* para la telemetría */
+#endif
     sFpsTimeLast = curTime;
     sDrawnFrames = 0;
 }
@@ -486,6 +492,9 @@ void* main_game_init(UNUSED void* dummy) {
 
     mods_init();
     enable_queued_mods();
+#ifdef SMNET
+    ns_smnet_mods_restore_own();   /* el juego se cerró estando en una partida masiva ajena */
+#endif
     LOADING_SCREEN_MUTEX(
         gCurrLoadingSegment.percentage = 0;
         loading_screen_set_segment_text("Starting Game");
@@ -604,8 +613,21 @@ int main(int argc, char *argv[]) {
         static struct Object sHackyObject = { 0 };
         gMarioStates[0].marioObj = &sHackyObject;
 
-        extern void djui_panel_do_host(bool reconnecting, bool playSound);
-        djui_panel_do_host(NULL, false);
+#ifdef SMNET
+        /* --coopnet con --playercount de más de 16: partida masiva listada en coopnet (el host
+           dedicado del VPS: --headless --coopnet "" --playercount 1024 [--server PUERTO]) */
+        if (gCLIOpts.coopnet && configAmountOfPlayers > MAX_PLAYERS) {
+            extern void ns_smnet_lobby_host_request(void);
+            extern void djui_panel_do_host_with_system(bool reconnecting, bool playSound, int system);
+            if (gCLIOpts.network == NT_SERVER) { configHostPort = gCLIOpts.networkPort; }
+            ns_smnet_lobby_host_request();
+            djui_panel_do_host_with_system(false, false, NS_SOCKET);
+        } else
+#endif
+        {
+            extern void djui_panel_do_host(bool reconnecting, bool playSound);
+            djui_panel_do_host(NULL, false);
+        }
     } else {
         network_init(NT_NONE, false);
     }

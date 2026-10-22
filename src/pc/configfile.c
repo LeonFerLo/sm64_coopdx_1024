@@ -90,6 +90,14 @@ enum RefreshRateMode configFramerateMode          = RRM_AUTO;
 unsigned int configFrameLimit                     = 60;
 unsigned int configInterpolationMode              = 1;
 unsigned int configDrawDistance                   = 6;
+#ifdef SMNET
+unsigned int configSmnetCrowd                     = 2;   /* modo masivo: detalle de la multitud, 0 (muy baja) .. 4 (muy alta) */
+unsigned int configSmnetFarMode                   = 0;   /* lejanos: 0 pocas caras, 1 gorra, 2 modelo completo */
+bool         configSmnetFarAnimated               = true;
+bool         configSmnetLowFull                   = false;  /* bajos con el modelo completo */
+unsigned int configSmnetUpload                    = 0;   /* 0 normal (puede ser supernodo), 1 lenta (no) */
+bool         configSmnetTelemetry                 = true;
+#endif
 // sound settings
 unsigned int configMasterVolume                   = 80; // 0 - MAX_VOLUME
 unsigned int configMusicVolume                    = MAX_VOLUME;
@@ -264,6 +272,14 @@ static const struct ConfigOption options[] = {
     {.name = "frame_limit",                    .type = CONFIG_TYPE_UINT, .uintValue = &configFrameLimit},
     {.name = "interpolation_mode",             .type = CONFIG_TYPE_UINT, .uintValue = &configInterpolationMode},
     {.name = "coop_draw_distance",             .type = CONFIG_TYPE_UINT, .uintValue = &configDrawDistance},
+#ifdef SMNET
+    {.name = "smnet_crowd_detail",             .type = CONFIG_TYPE_UINT, .uintValue = &configSmnetCrowd},
+    {.name = "smnet_far_mode",                 .type = CONFIG_TYPE_UINT, .uintValue = &configSmnetFarMode},
+    {.name = "smnet_far_animated",             .type = CONFIG_TYPE_BOOL, .boolValue = &configSmnetFarAnimated},
+    {.name = "smnet_low_full",                 .type = CONFIG_TYPE_BOOL, .boolValue = &configSmnetLowFull},
+    {.name = "smnet_upload_slow",              .type = CONFIG_TYPE_UINT, .uintValue = &configSmnetUpload},
+    {.name = "smnet_telemetry",                .type = CONFIG_TYPE_BOOL, .boolValue = &configSmnetTelemetry},
+#endif
     // sound settings
     {.name = "master_volume",                  .type = CONFIG_TYPE_UINT, .uintValue = &configMasterVolume},
     {.name = "music_volume",                   .type = CONFIG_TYPE_UINT, .uintValue = &configMusicVolume},
@@ -386,8 +402,15 @@ static const struct ConfigOption options[] = {
     {.name = "force_4by3",                     .type = CONFIG_TYPE_BOOL,   .boolValue   = &configForce4By3},
     {.name = "dynos_local_player_model_only",  .type = CONFIG_TYPE_BOOL,   .boolValue   = &configDynosLocalPlayerModelOnly},
     // CoopNet settings
+#ifdef SMNET
+    /* la configuración se comparte con el sm64coopdx oficial (misma carpeta): el fork guarda su
+       servidor en otras claves, así no usa el oficial que quedó guardado (ni lo pisa) */
+    {.name = "coopnet_ip_1024",                .type = CONFIG_TYPE_STRING, .stringValue = (char*)&configCoopNetIp, .maxStringLength = MAX_CONFIG_STRING},
+    {.name = "coopnet_port_1024",              .type = CONFIG_TYPE_UINT,   .uintValue   = &configCoopNetPort},
+#else
     {.name = "coopnet_ip",                     .type = CONFIG_TYPE_STRING, .stringValue = (char*)&configCoopNetIp, .maxStringLength = MAX_CONFIG_STRING},
     {.name = "coopnet_port",                   .type = CONFIG_TYPE_UINT,   .uintValue   = &configCoopNetPort},
+#endif
     {.name = "coopnet_password",               .type = CONFIG_TYPE_STRING, .stringValue = (char*)&configPassword, .maxStringLength = MAX_CONFIG_STRING},
     {.name = "coopnet_dest",                   .type = CONFIG_TYPE_STRING, .stringValue = (char*)&configDestId, .maxStringLength = MAX_CONFIG_STRING},
     // DJUI settings
@@ -846,7 +869,11 @@ NEXT_OPTION:
     free(gCLIOpts.enableMods);
 
     if (gCLIOpts.playerCount != 0) {
+#ifdef SMNET
+        configAmountOfPlayers = MIN(gCLIOpts.playerCount, 1024);   /* más de 16: partida masiva */
+#else
         configAmountOfPlayers = MIN(gCLIOpts.playerCount, MAX_PLAYERS);
+#endif
     }
 
 #ifndef COOPNET

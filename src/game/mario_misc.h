@@ -7,7 +7,7 @@
 #include "types.h"
 
 extern struct GraphNodeObject gMirrorMario[MAX_PLAYERS];
-extern struct MarioBodyState gBodyStates[MAX_PLAYERS];
+extern struct MarioBodyState gBodyStates[MAX_PLAYERS + SMNET_RENDER_EXTRA];
 
 Gfx *geo_draw_mario_head_goddard(s32 callContext, struct GraphNode *node, Mat4 *c);
 /* |description|Behavior init function for NPC Toad|descriptionEnd| */

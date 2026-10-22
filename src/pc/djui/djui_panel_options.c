@@ -1,3 +1,6 @@
+#ifdef SMNET
+#include "djui_panel_smnet_options.h"
+#endif
 #include "djui.h"
 #include "djui_panel.h"
 #include "djui_panel_player.h"
@@ -33,6 +36,9 @@ void djui_panel_options_create(struct DjuiBase* caller) {
         djui_button_create(body, DLANG(OPTIONS, DISPLAY), DJUI_BUTTON_STYLE_NORMAL, djui_panel_display_create);
         djui_button_create(body, DLANG(OPTIONS, SOUND), DJUI_BUTTON_STYLE_NORMAL, djui_panel_sound_create);
         djui_button_create(body, DLANG(OPTIONS, MISC), DJUI_BUTTON_STYLE_NORMAL, djui_panel_misc_create);
+#ifdef SMNET
+        djui_button_create(body, "Partida masiva", DJUI_BUTTON_STYLE_NORMAL, djui_panel_smnet_options_create);
+#endif
         djui_button_create(body, DLANG(MENU, BACK), DJUI_BUTTON_STYLE_BACK, djui_panel_options_back);
     }
 

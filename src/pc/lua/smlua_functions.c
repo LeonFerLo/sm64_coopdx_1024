@@ -1,3 +1,6 @@
+#ifdef SMNET
+#include "pc/network/smnet/ns_smnet.h"
+#endif
 #include "smlua.h"
 #include "smlua_cobject.h"
 
@@ -1114,4 +1117,7 @@ void smlua_bind_functions(void) {
     smlua_bind_function(L, "djui_hud_print_text", smlua_func_djui_hud_print_text);
     smlua_bind_function(L, "djui_hud_print_text_interpolated", smlua_func_djui_hud_print_text_interpolated);
     smlua_bind_function(L, "return_self", smlua_func_return_self); // compatibility band-aid
+#ifdef SMNET
+    ns_smnet_lua_bind(L);   /* identidad estable de todos los jugadores del modo masivo */
+#endif
 }

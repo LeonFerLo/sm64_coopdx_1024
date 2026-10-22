@@ -92,3 +92,13 @@ todo-old.txt
 tools/ido5.3_compiler/usr/lib/libc.so.1
 /.vs
 tools/audiofile/libaudiofile.a
+
+# sm64coopdx-1024: nunca subir la ROM ni datos locales
+*.z64
+*.n64
+*.v64
+smnet-identidad.key
+smnet-identidad.txt
+smnet-baneados.txt
+smnet-*.log
+servidor/coopnet/bin/

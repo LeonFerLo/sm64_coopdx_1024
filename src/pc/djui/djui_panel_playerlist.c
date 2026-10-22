@@ -9,6 +9,10 @@
 #include "pc/configfile.h"
 #include "pc/network/network.h"
 #include "pc/utils/misc.h"
+#ifdef SMNET
+#include "pc/network/smnet/ns_smnet.h"
+#include "game/save_file.h"
+#endif
 
 extern ALIGNED8 const u8 texture_hud_char_mario_head[];
 
@@ -45,7 +49,15 @@ static void playerlist_update_row(u8 i, struct NetworkPlayer *np) {
         snprintf(sActNum, 7, "Done");
     }
     if (charIndex >= CT_MAX) { charIndex = 0; }
+#ifdef SMNET
+    {   /* textura completa (tamaño y formato), no solo el puntero */
+        const struct TextureInfo* ti = &gCharacters[charIndex].hudHeadTexture;
+        if (ti->texture == NULL || ti->width == 0 || ti->height == 0) { ti = &gCharacters[0].hudHeadTexture; }
+        djuiHeadIconImages[i]->textureInfo = *ti;
+    }
+#else
     djuiHeadIconImages[i]->textureInfo.texture = gCharacters[charIndex].hudHeadTexture.texture;
+#endif
 
     s16 pingValue = np->ping / 150;
     switch (pingValue) {
@@ -84,6 +96,76 @@ static void playerlist_update_row(u8 i, struct NetworkPlayer *np) {
     djui_base_set_size(&djuiTextAct[i]->base, configShowPing ? 65 : 100, 32.0f);
 }
 
+#ifdef SMNET
+/* modo masivo: la lista es global (todos los de la partida, no solo los 15 slots), con
+   desplazamiento de a uno (rueda del ratón o las teclas de página); la última fila dice qué parte
+   se ve */
+static int sMassiveScroll = 0;
+void djui_panel_playerlist_scroll(int rows) {
+    int n = ns_smnet_list_count();
+    int vis = sPlayerListSize - 1;
+    sMassiveScroll += rows;
+    if (sMassiveScroll > n - vis) { sMassiveScroll = n - vis; }
+    if (sMassiveScroll < 0) { sMassiveScroll = 0; }
+}
+
+static void playerlist_massive_render(void) {
+    int n = ns_smnet_list_count();
+    int vis = sPlayerListSize - 1;
+    if (sMassiveScroll > n - vis) { sMassiveScroll = n - vis; }
+    if (sMassiveScroll < 0) { sMassiveScroll = 0; }
+    for (int r = 0; r < MAX_PLAYERS; r++) {
+        struct NsSmnetListEntry e;
+        if (r < vis && ns_smnet_list_get(sMassiveScroll + r, &e)) {
+            djui_base_set_visible(&djuiRow[r]->base, true);
+            djui_base_set_visible(&djuiPingImages[r]->base, false);
+            djui_base_set_visible(&djuiHeadIconImages[r]->base, true);
+            /* la cara del personaje que tiene puesto de verdad (para uno mismo y los de slot, el del
+               MarioState: los mods como Character Select lo cambian) y la textura completa (tamaño y
+               formato incluidos: una cara de un mod que no es de 16x16 RGBA16 salía rota) */
+            {
+                struct Character* c = NULL;
+                if (e.localIndex >= 0 && e.localIndex < MAX_PLAYERS) { c = gMarioStates[e.localIndex].character; }
+                if (c == NULL) { c = &gCharacters[e.model < CT_MAX ? e.model : 0]; }
+                const struct TextureInfo* ti = &c->hudHeadTexture;
+                if (ti->texture == NULL || ti->width == 0 || ti->height == 0) { ti = &gCharacters[0].hudHeadTexture; }
+                djuiHeadIconImages[r]->textureInfo = *ti;
+            }
+            djui_base_set_color(&djuiTextNames[r]->base, e.rgb[0], e.rgb[1], e.rgb[2], 255);
+            djui_text_set_text(djuiTextNames[r], e.name);
+            djui_base_set_color(&djuiTextDescriptions[r]->base, 160, 160, 160, 255);
+            djui_text_set_text(djuiTextDescriptions[r], e.self ? "(vos)" : (e.slot ? "cerca" : ""));
+            if (e.hasLocation) {
+                djui_text_set_text(djuiTextLocations[r], get_level_name(get_level_course_num(e.level), e.level, e.area));
+                char act[8];
+                if (e.act != 0 && e.act != 99) { snprintf(act, sizeof act, "# %d", e.act); } else { snprintf(act, sizeof act, " "); }
+                djui_text_set_text(djuiTextAct[r], act);
+            } else {
+                djui_text_set_text(djuiTextLocations[r], "-");
+                djui_text_set_text(djuiTextAct[r], " ");
+            }
+            djui_base_set_size(&djuiTextAct[r]->base, 100, 32.0f);
+        } else if (r == vis) {
+            /* fila de estado */
+            char t[96];
+            int a = n > 0 ? sMassiveScroll + 1 : 0, b = sMassiveScroll + vis < n ? sMassiveScroll + vis : n;
+            snprintf(t, sizeof t, "%d-%d de %d", a, b, n);
+            djui_base_set_visible(&djuiRow[r]->base, true);
+            djui_base_set_visible(&djuiPingImages[r]->base, false);
+            djui_base_set_visible(&djuiHeadIconImages[r]->base, false);
+            djui_base_set_color(&djuiTextNames[r]->base, 255, 255, 160, 255);
+            djui_text_set_text(djuiTextNames[r], t);
+            djui_text_set_text(djuiTextDescriptions[r], "");
+            djui_base_set_color(&djuiTextLocations[r]->base, 160, 160, 160, 255);
+            djui_text_set_text(djuiTextLocations[r], n > vis ? "rueda o RePag/AvPag" : "");
+            djui_text_set_text(djuiTextAct[r], " ");
+        } else {
+            djui_base_set_visible(&djuiRow[r]->base, false);
+        }
+    }
+}
+#endif
+
 void djui_panel_playerlist_on_render_pre(UNUSED struct DjuiBase* base, UNUSED bool* skipRender) {
     if (gDjuiInMainMenu || gNetworkType == NT_NONE) {
         if (gDjuiPlayerList != NULL) {
@@ -95,6 +177,9 @@ void djui_panel_playerlist_on_render_pre(UNUSED struct DjuiBase* base, UNUSED bo
         return;
     }
 
+#ifdef SMNET
+    if (ns_smnet_massive()) { playerlist_massive_render(); return; }
+#endif
     s32 j = 0;
     sPlayer = 0;
 

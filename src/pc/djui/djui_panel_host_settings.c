@@ -29,7 +29,11 @@ static bool djui_panel_host_limit_valid(void) {
         limit += (*buffer - '0');
         buffer++;
     }
+#ifdef SMNET
+    return limit >= 1 && limit <= 1024;   /* más de 16: partida masiva (smnet) */
+#else
     return limit >= 1 && limit <= MAX_PLAYERS;
+#endif
 }
 
 static void djui_panel_host_player_text_change(struct DjuiBase* caller) {

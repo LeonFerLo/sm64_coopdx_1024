@@ -4,6 +4,9 @@
 #include "djui_panel_pause.h"
 #include "djui_panel_modlist.h"
 #include "djui_panel_playerlist.h"
+#ifdef SMNET
+#include "pc/network/smnet/ns_smnet.h"
+#endif
 
 #include "pc/controller/controller_sdl.h"
 #include "pc/controller/controller_mouse.h"
@@ -255,6 +258,11 @@ bool djui_interactable_on_key_down(int scancode) {
                 break;
             }
             if (gDjuiPlayerList->base.visible) {
+#ifdef SMNET
+                /* modo masivo: lista global, de a una fila */
+                if (ns_smnet_massive() && scancode == (int)configKeyNextPage[i]) { djui_panel_playerlist_scroll(1); break; }
+                if (ns_smnet_massive() && scancode == (int)configKeyPrevPage[i]) { djui_panel_playerlist_scroll(-1); break; }
+#endif
                 if (scancode == (int)configKeyNextPage[i]) {
                     sPageIndex++;
                     if (sPageIndex > ((network_player_connected_count() - 1) / sPlayerListSize)) {
@@ -348,6 +356,12 @@ void djui_interactable_on_text_editing(char* text, int cursorPos) {
 }
 
 void djui_interactable_on_scroll(float x, float y) {
+#ifdef SMNET
+    if (gDjuiPlayerList != NULL && gDjuiPlayerList->base.visible && ns_smnet_massive()) {
+        if (y != 0) { djui_panel_playerlist_scroll(y > 0 ? -1 : 1); }
+        return;
+    }
+#endif
     if (gInteractableFocus == NULL) { return; }
     if (gInteractableFocus->interactable == NULL) { return; }
     if (gInteractableFocus->interactable->on_scroll == NULL) { return; }

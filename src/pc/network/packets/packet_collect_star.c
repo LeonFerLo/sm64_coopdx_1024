@@ -1,4 +1,7 @@
 #include <stdio.h>
+#ifdef SMNET
+#include "pc/network/smnet/ns_smnet.h"
+#endif
 #include "../network.h"
 #include "behavior_table.h"
 #include "course_table.h"
@@ -88,6 +91,10 @@ void network_receive_collect_star(struct Packet* p) {
     packet_read(p, &starIndex,  sizeof(s16));
     packet_read(p, &gSaveFileUsingBackupSlot, sizeof(u8));
     if (gSaveFileUsingBackupSlot != 0) { gSaveFileUsingBackupSlot = 1; }
+#ifdef SMNET
+    /* modo masivo: cada uno guarda en su propio archivo (el del que la juntó puede ser otro) */
+    if (ns_smnet_massive()) { gCurrSaveFileNum = lastSaveFileNum; gSaveFileUsingBackupSlot = lastBackupSlot; }
+#endif
 
     const void* behavior = get_behavior_from_id(behaviorId);
 

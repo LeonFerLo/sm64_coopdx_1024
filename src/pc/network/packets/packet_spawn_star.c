@@ -1,4 +1,7 @@
 #include <stdio.h>
+#ifdef SMNET
+#include "pc/network/smnet/ns_smnet.h"
+#endif
 #include "../network.h"
 #include "object_fields.h"
 #include "behavior_data.h"
@@ -36,6 +39,11 @@ void network_receive_spawn_star(struct Packet* p) {
     packet_read(p, &z, sizeof(f32));
     packet_read(p, &behParams, sizeof(u32));
     packet_read(p, &networkPlayerIndex, sizeof(u8));
+#ifdef SMNET
+    /* modo masivo: el índice es del mundo del que la mandó (todos son 0 para sí mismos): la
+       escena de la estrella la ve solo el que la hizo aparecer */
+    if (ns_smnet_rx_from_other()) { networkPlayerIndex = UNKNOWN_GLOBAL_INDEX; }
+#endif
 
     struct Object* oldObject = gCurrentObject;
     struct Object* o = NULL;

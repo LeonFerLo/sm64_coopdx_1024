@@ -1,3 +1,4 @@
+#include <stdlib.h>
 #include <inttypes.h>
 #include "libcoopnet.h"
 #include "coopnet.h"
@@ -58,6 +59,9 @@ static void coopnet_on_peer_disconnected(uint64_t peerId) {
 }
 
 static void coopnet_on_load_balance(const char* host, uint32_t port) {
+    /* con COOPDX_COOPNET no se pisa la configuración guardada */
+    const char* cnEnv = getenv("COOPDX_COOPNET");
+    if (cnEnv && cnEnv[0]) { return; }
     if (host && strlen(host) > 0) {
         snprintf(configCoopNetIp, MAX_CONFIG_STRING, "%s", host);
     }
@@ -136,6 +140,10 @@ static void coopnet_on_error(enum MPacketErrorNumber error, uint64_t tag) {
             break;
         case MERR_LOBBY_PASSWORD_INCORRECT:
             djui_popup_create(DLANG(NOTIF, LOBBY_PASSWORD_INCORRECT), 2);
+            network_shutdown(false, false, false, false);
+            break;
+        case MERR_LOBBY_MASSIVE:   /* partida masiva: se entra por smnet (la lista ya lo hace) */
+            djui_popup_create("Es una partida masiva: entrá desde la lista de partidas", 2);
             network_shutdown(false, false, false, false);
             break;
         case MERR_NONE:
@@ -293,7 +301,17 @@ static CoopNetRc coopnet_initialize(void) {
     char* endptr = NULL;
     uint64_t destId = strtoull(configDestId, &endptr, 10);
 
-    CoopNetRc rc = coopnet_begin(configCoopNetIp, configCoopNetPort, configPlayerName, destId);
+    /* COOPDX_COOPNET=ip:puerto: usar otro servidor coopnet (el nuestro, para las partidas masivas)
+       en vez del configurado; lo usan también la lista de partidas y el encuentro de smnet */
+    char cnHost[MAX_CONFIG_STRING]; unsigned cnPort = configCoopNetPort;
+    snprintf(cnHost, sizeof cnHost, "%s", configCoopNetIp);
+    const char* cnEnv = getenv("COOPDX_COOPNET");
+    if (cnEnv && cnEnv[0]) {
+        snprintf(cnHost, sizeof cnHost, "%s", cnEnv);
+        char* c = strrchr(cnHost, ':');
+        if (c) { *c = 0; cnPort = (unsigned)atoi(c + 1); }
+    }
+    CoopNetRc rc = coopnet_begin(cnHost, cnPort, configPlayerName, destId);
     if (rc == COOPNET_FAILED) {
         djui_popup_create(DLANG(NOTIF, COOPNET_CONNECTION_FAILED), 2);
     }

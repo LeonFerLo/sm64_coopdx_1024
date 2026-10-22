@@ -1287,6 +1287,14 @@ static void geo_process_shadow(struct GraphNodeShadow *node) {
     // Sanity check our stack index, If we above or equal to our stack size. Return to prevent OOB\.
     if ((gMatStackIndex + 1) >= MATRIX_STACK_SIZE) { LOG_ERROR("Preventing attempt to exceed the maximum size %i for our matrix stack with size of %i.", MATRIX_STACK_SIZE - 1, gMatStackIndex); return; }
 
+#ifdef SMNET
+    /* modo masivo: una sombra invisible se descarta igual; no se calcula (busca el piso dos
+       veces por cuadro, lo más caro de los impostores lejanos) */
+    if (gCurGraphNodeObject != NULL && gCurGraphNodeObject->shadowInvisible && gCurGraphNodeHeldObject == NULL) {
+        if (node->node.children != NULL) { geo_process_node_and_siblings(node->node.children); }
+        return;
+    }
+#endif
     if (gCurGraphNodeCamera != NULL && gCurGraphNodeObject != NULL) {
         if (gCurGraphNodeHeldObject != NULL) {
             get_pos_from_transform_mtx(gCurGraphNodeObject->shadowPos, gMatStack[gMatStackIndex],

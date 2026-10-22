@@ -1,4 +1,7 @@
 #include <stdio.h>
+#ifdef SMNET
+#include "pc/network/smnet/ns_smnet.h"
+#endif
 #include "../network.h"
 #include "pc/debuglog.h"
 
@@ -22,6 +25,9 @@ void network_send_player_settings(void) {
     }
 
     network_send(&p);
+#ifdef SMNET
+    ns_smnet_settings_changed();   /* modo masivo: el nombre y los colores van en los datos de smnet */
+#endif
 }
 
 void network_receive_player_settings(struct Packet* p) {

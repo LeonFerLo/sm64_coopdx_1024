@@ -180,6 +180,15 @@ void get_version_remote(void) {
 
 void check_for_updates(void) {
     LOADING_SCREEN_MUTEX(loading_screen_set_segment_text("Checking For Updates"));
+#ifdef SMNET
+    /* fork de 1024 jugadores: no se compara con la versión oficial (el actualizador instalaría la
+       oficial encima); le pregunta al servidor coopnet configurado por la última del fork */
+    {
+        extern bool ns_smnet_fork_update_check(char* out, int cap);
+        if (ns_smnet_fork_update_check(sVersionUpdateTextBuffer, (int)sizeof(sVersionUpdateTextBuffer))) { gUpdateMessage = true; }
+        return;
+    }
+#endif
 
     get_version_remote();
     if (sRemoteVersionStr[0] == 'v' && is_version_newer(sClientVersion, sRemoteVersion)) {

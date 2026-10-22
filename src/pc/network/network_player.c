@@ -1,4 +1,7 @@
 #include "network_player.h"
+#ifdef SMNET
+#include "pc/network/smnet/ns_smnet.h"
+#endif
 #include "types.h"
 #include "object_fields.h"
 #include "game/mario_misc.h"
@@ -104,6 +107,10 @@ void network_player_set_override_location(struct NetworkPlayer *np, const char *
 }
 
 struct NetworkPlayer *network_player_from_global_index(u8 globalIndex) {
+#ifdef SMNET
+    /* modo masivo: dentro de un paquete que llegó de un slot, el índice global 0 es ese slot */
+    { s32 r = ns_smnet_remap_global(globalIndex); if (r > 0 && r < MAX_PLAYERS) { return &gNetworkPlayers[r]; } }
+#endif
     for (s32 i = 0; i < MAX_PLAYERS; i++) {
         if (!gNetworkPlayers[i].connected) { continue; }
         if (gNetworkPlayers[i].globalIndex == globalIndex) {

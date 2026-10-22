@@ -12,6 +12,10 @@
 #include "pc/configfile.h"
 #include "pc/debuglog.h"
 #include "macros.h"
+#ifdef SMNET
+#include "pc/network/smnet/ns_smnet.h"
+#include "pc/network/smnet/ns_smnet_lobby.h"
+#endif
 
 #ifdef COOPNET
 
@@ -65,7 +69,20 @@ static void djui_lobby_on_hover_end(UNUSED struct DjuiBase* base) {
     djui_text_set_text(sTooltip, "");
 }
 
+#ifdef SMNET
+/* partidas masivas de la lista (más de 16): se entra por smnet, no por coopnet */
+#define MASSIVE_SEEN_MAX 256
+static uint64_t sMassiveSeen[MASSIVE_SEEN_MAX];
+static int sMassiveSeenN = 0;
+static bool lobby_is_massive(uint64_t id) { for (int i = 0; i < sMassiveSeenN; i++) if (sMassiveSeen[i] == id) return true; return false; }
+#endif
+
 void djui_panel_join_lobby(struct DjuiBase* caller) {
+#ifdef SMNET
+    if (lobby_is_massive((uint64_t)caller->tag)) {
+        if (ns_smnet_prejoin_begin_lobby(caller, (uint64_t)caller->tag, sPassword ? sPassword : "")) return;
+    }
+#endif
     gCoopNetDesiredLobby = (uint64_t)caller->tag;
     snprintf(gCoopNetPassword, 64, "%s", sPassword);
     network_reset_reconnect_and_rehost();
@@ -77,7 +94,13 @@ void djui_panel_join_lobby(struct DjuiBase* caller) {
 void djui_panel_join_query(uint64_t aLobbyId, UNUSED uint64_t aOwnerId, uint16_t aConnections, uint16_t aMaxConnections, UNUSED const char* aGame, const char* aVersion, const char* aHostName, const char* aMode, const char* aDescription) {
     if (!sLobbyLayout) { return; }
     if (!sLobbyPaginated) { return; }
+#ifdef SMNET
+    bool massive = aMaxConnections > MAX_PLAYERS;
+    if (aMaxConnections > 1024) { return; }
+    if (massive && sMassiveSeenN < MASSIVE_SEEN_MAX) sMassiveSeen[sMassiveSeenN++] = aLobbyId;
+#else
     if (aMaxConnections > MAX_PLAYERS) { return; }
+#endif
 
     char playerText[64] = "";
     snprintf(playerText, 63, "%u/%u", aConnections, aMaxConnections);
@@ -130,6 +153,9 @@ void djui_panel_join_lobbies_on_destroy(UNUSED struct DjuiBase* caller) {
 }
 
 void djui_panel_join_lobbies_refresh(UNUSED struct DjuiBase* caller) {
+#ifdef SMNET
+    sMassiveSeenN = 0;
+#endif
     djui_base_destroy_children(&sLobbyLayout->base);
     djui_text_set_text(sRefreshButton->text, DLANG(LOBBIES, REFRESHING));
     djui_base_set_enabled(&sRefreshButton->base, false);

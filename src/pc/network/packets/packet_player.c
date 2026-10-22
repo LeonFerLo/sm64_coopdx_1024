@@ -17,6 +17,9 @@
 #include "pc/djui/djui_language.h"
 #include "pc/debuglog.h"
 #include "src/game/hardcoded.h"
+#ifdef SMNET
+#include "pc/network/smnet/ns_smnet.h"
+#endif
 
 #pragma pack(1)
 struct PacketPlayerData {
@@ -222,6 +225,16 @@ static void write_packet_data(struct PacketPlayerData* data, struct MarioState* 
     m->dialogId = data->dialogId;
 }
 
+#ifdef SMNET
+/* para la plantilla de los bots (ns_smnet.c): dónde están los campos dentro de PacketPlayerData */
+void ns_smnet_player_offsets(u16* pos, u16* faceAngle, u16* intendedYaw, u16* size) {
+    *pos = (u16)offsetof(struct PacketPlayerData, pos);
+    *faceAngle = (u16)offsetof(struct PacketPlayerData, faceAngle);
+    *intendedYaw = (u16)offsetof(struct PacketPlayerData, intendedYaw);
+    *size = (u16)sizeof(struct PacketPlayerData);
+}
+#endif
+
 void network_send_player(u8 localIndex) {
     if (gMarioStates[localIndex].marioObj == NULL) { return; }
     if (gDjuiInMainMenu) { return; }
@@ -234,6 +247,10 @@ void network_send_player(u8 localIndex) {
     packet_init(&p, PACKET_PLAYER, false, PLMT_AREA);
     packet_write(&p, &gNetworkPlayers[localIndex].globalIndex, sizeof(u8));
     packet_write(&p, &data, sizeof(struct PacketPlayerData));
+#ifdef SMNET
+    /* modo masivo: va al flujo de estado de smnet aunque no haya "clientes" conectados */
+    if (localIndex == 0 && ns_smnet_massive()) { ns_smnet_publish_player_packet(&p); return; }
+#endif
     network_send(&p);
 }
 

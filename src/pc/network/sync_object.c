@@ -1,4 +1,7 @@
 #include "types.h"
+#ifdef SMNET
+#include "pc/network/smnet/ns_smnet.h"
+#endif
 #include "sync_object.h"
 #include "network.h"
 #include "behavior_table.h"
@@ -322,8 +325,15 @@ bool sync_object_should_own(u32 syncId) {
     // check distance
     for (s32 i = 0; i < MAX_PLAYERS; i++) {
         if (i != 0 && !is_player_in_local_area(&gMarioStates[i])) { continue; }
+#ifdef SMNET
+        if (i != 0 && !ns_smnet_slot_simulates((u8)i)) { continue; }   /* bots del modo masivo */
+#endif
         if (player_distance(&gMarioStates[0], so->o) > player_distance(&gMarioStates[i], so->o)) { return false; }
     }
+#ifdef SMNET
+    /* modo masivo: también los que no tienen slot acá pero simulan la misma área */
+    if (ns_smnet_other_owner_closer(so->o->oPosX, so->o->oPosY, so->o->oPosZ, player_distance(&gMarioStates[0], so->o))) { return false; }
+#endif
 
     if (so->o->oHeldState == HELD_HELD && so->o->heldByPlayerIndex != 0) { return false; }
 
@@ -332,6 +342,10 @@ bool sync_object_should_own(u32 syncId) {
 
 u32 sync_object_get_available_local_id(void) {
     u32 startId = (gNetworkPlayers[0].globalIndex + 1) * SYNC_ID_BLOCK_SIZE;
+#ifdef SMNET
+    /* modo masivo: todos tienen índice global 0; el bloque sale del id de smnet (no choca) */
+    { s32 sid = ns_smnet_local_smnet_id(); if (sid >= 0) { startId = (u32)(sid + 1 + MAX_PLAYERS) * SYNC_ID_BLOCK_SIZE; } }
+#endif
     u32 endId = startId + SYNC_ID_BLOCK_SIZE;
     for (u32 id = startId; id < endId; id++) {
         struct SyncObject* so = sync_object_get(id);

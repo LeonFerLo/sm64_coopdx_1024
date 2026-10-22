@@ -142,6 +142,7 @@ void djui_panel_display_create(struct DjuiBase* caller) {
         };
         djui_selectionbox_create(body, DLANG(DISPLAY, DRAW_DISTANCE), drawDistanceChoices, ARRAY_COUNT(drawDistanceChoices), &configDrawDistance, NULL);
 
+
         djui_button_create(body, DLANG(MENU, BACK), DJUI_BUTTON_STYLE_BACK, djui_panel_menu_back);
 
         sRestartText = djui_text_create(body, "");

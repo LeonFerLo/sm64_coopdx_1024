@@ -2,6 +2,9 @@
 #include "pc/crash_handler.h"
 #include "pc/mods/mods.h"
 #include "pc/network/network.h"
+#ifdef SMNET
+#include "pc/network/smnet/ns_smnet.h"
+#endif
 
 #define MAX_UNWOUND_SIZE 256
 static struct LSTNetworkType sUnwoundLnts[MAX_UNWOUND_LNT] = { 0 };
@@ -397,6 +400,11 @@ void smlua_set_sync_table_field_from_network(u64 seq, u16 modRemoteIndex, u16 ln
     lua_pop(L, 1); // pop seq value
 
     // validate seq
+#ifdef SMNET
+    /* modo masivo: gGlobalSyncTable la decide el coordinador; lo suyo vale aunque acá se haya
+       escrito antes (cada uno es servidor y escribe su copia) */
+    if (ns_smnet_rx_global_authority()) { readSeq = 0; seq = (seq == 0) ? 1 : seq; }
+#endif
     if (seq <= readSeq) {
         LOG_INFO("Received outdated sync table field packet: %llu <= %llu", seq, readSeq);
         lua_pop(L, 1); // pop seq table
@@ -577,3 +585,99 @@ void smlua_sync_table_send_all(u8 toLocalIndex) {
     }
     LUA_STACK_CHECK_END(gLuaState);
 }
+
+#ifdef SMNET
+/* modo masivo (ns_smnet.c) ------------------------------------------------------------------ */
+
+/* manda todos los campos de gPlayerSyncTable[0] (los propios) de todos los mods; ns_smnet los
+   dirige al jugador que los pidió */
+void smlua_sync_table_send_own_player(void) {
+    lua_State* L = gLuaState;
+    if (L == NULL) { return; }
+    LUA_STACK_CHECK_BEGIN(L);
+    for (int i = 0; i < gActiveMods.entryCount; i++) {
+        struct Mod* mod = gActiveMods.entries[i];
+        lua_getfield(L, LUA_REGISTRYINDEX, mod->relativePath);
+        if (lua_type(L, -1) != LUA_TTABLE) { lua_pop(L, 1); continue; }
+        lua_getfield(L, -1, "gPlayerSyncTable");
+        if (lua_type(L, -1) == LUA_TTABLE) {
+            lua_pushinteger(L, 0);
+            lua_gettable(L, -2);
+            if (lua_type(L, -1) == LUA_TTABLE) { smlua_sync_table_send_table(0); }
+            lua_pop(L, 1); // pop gPlayerSyncTable[0]
+        }
+        lua_pop(L, 2); // pop gPlayerSyncTable, file table
+    }
+    LUA_STACK_CHECK_END(L);
+}
+
+/* manda todos los campos de gGlobalSyncTable de todos los mods (el coordinador, al que entra) */
+void smlua_sync_table_send_own_global(void) {
+    lua_State* L = gLuaState;
+    if (L == NULL) { return; }
+    LUA_STACK_CHECK_BEGIN(L);
+    for (int i = 0; i < gActiveMods.entryCount; i++) {
+        struct Mod* mod = gActiveMods.entries[i];
+        lua_getfield(L, LUA_REGISTRYINDEX, mod->relativePath);
+        if (lua_type(L, -1) != LUA_TTABLE) { lua_pop(L, 1); continue; }
+        lua_getfield(L, -1, "gGlobalSyncTable");
+        if (lua_type(L, -1) == LUA_TTABLE) { smlua_sync_table_send_table(0); }
+        lua_pop(L, 2);
+    }
+    LUA_STACK_CHECK_END(L);
+}
+
+/* vacía gPlayerSyncTable[localIndex] en el lugar (las referencias que tengan los mods siguen
+   valiendo): un slot que pasa a otro jugador no debe conservar los valores del anterior */
+static void smlua_sync_table_clear_table(int t) {
+    lua_State* L = gLuaState;
+    lua_pushstring(L, "_table");
+    lua_rawget(L, t);
+    if (lua_type(L, -1) == LUA_TTABLE) {
+        int it = lua_gettop(L);
+        lua_pushnil(L);
+        while (lua_next(L, it) != 0) {
+            lua_pop(L, 1); // valor
+            lua_pushvalue(L, -1);
+            lua_pushnil(L);
+            lua_rawset(L, it);
+        }
+    }
+    lua_pop(L, 1);
+    lua_pushstring(L, "_seq");
+    lua_newtable(L);
+    lua_rawset(L, t);
+}
+
+void smlua_sync_table_clear_player(u8 localIndex) {
+    lua_State* L = gLuaState;
+    if (L == NULL || localIndex == 0 || localIndex >= MAX_PLAYERS) { return; }
+    LUA_STACK_CHECK_BEGIN(L);
+    for (int i = 0; i < gActiveMods.entryCount; i++) {
+        struct Mod* mod = gActiveMods.entries[i];
+        lua_getfield(L, LUA_REGISTRYINDEX, mod->relativePath);
+        if (lua_type(L, -1) != LUA_TTABLE) { lua_pop(L, 1); continue; }
+        lua_getfield(L, -1, "gPlayerSyncTable");
+        if (lua_type(L, -1) == LUA_TTABLE) {
+            lua_pushinteger(L, localIndex);
+            lua_gettable(L, -2);
+            if (lua_type(L, -1) == LUA_TTABLE) { smlua_sync_table_clear_table(lua_gettop(L)); }
+            lua_pop(L, 1);
+        }
+        lua_pop(L, 2);
+    }
+    LUA_STACK_CHECK_END(L);
+}
+
+/* índice de un mod por su carpeta (los índices de la lista de mods no coinciden entre jugadores) */
+int smlua_mod_index_from_path(const char* path) {
+    for (int i = 0; i < gActiveMods.entryCount; i++) {
+        if (gActiveMods.entries[i] && !strcmp(gActiveMods.entries[i]->relativePath, path)) { return i; }
+    }
+    return -1;
+}
+const char* smlua_mod_path_from_index(int index) {
+    if (index < 0 || index >= gActiveMods.entryCount || gActiveMods.entries[index] == NULL) { return NULL; }
+    return gActiveMods.entries[index]->relativePath;
+}
+#endif

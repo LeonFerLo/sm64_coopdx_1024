@@ -1,4 +1,7 @@
 #include <stdio.h>
+#ifdef SMNET
+#include "pc/network/smnet/ns_smnet.h"
+#endif
 #include "../network.h"
 #include "game/save_file.h"
 #include "buffers/buffers.h"
@@ -28,6 +31,9 @@ void network_receive_save_set_flag(struct Packet* p) {
     packet_read(p, &courseStars, sizeof(u8));
     packet_read(p, &flags,       sizeof(u32));
     packet_read(p, &backupSlot,  sizeof(u8));
+#ifdef SMNET
+    if (ns_smnet_massive()) { fileIndex = gCurrSaveFileNum - 1; backupSlot = gSaveFileUsingBackupSlot ? 1 : 0; }
+#endif
 
     if (fileIndex < 0 || fileIndex >= NUM_SAVE_FILES) {
         LOG_ERROR("Invalid fileIndex: %d", fileIndex);

@@ -8,6 +8,9 @@
 #include "pc/network/network.h"
 #include "pc/network/socket/socket.h"
 #include "pc/network/coopnet/coopnet.h"
+#ifdef SMNET
+#include "pc/network/smnet/ns_smnet.h"
+#endif
 #include "pc/utils/misc.h"
 #include "pc/configfile.h"
 #include "pc/debuglog.h"
@@ -192,6 +195,17 @@ void djui_panel_join_direct_do_join(struct DjuiBase* caller) {
     }
     network_reset_reconnect_and_rehost();
     djui_panel_join_direct_ip_text_set_new();
+#ifdef SMNET
+    /* partida masiva: el que se une arranca su mundo como Host y entra a la red del otro */
+    if (ns_smnet_wanted() && ns_smnet_massive_default()) {
+        extern void djui_panel_do_host_with_system(bool reconnecting, bool playSound, int system);
+        /* primero los mods de la partida (bajarlos si faltan y activar esos); después se une */
+        if (ns_smnet_prejoin_begin(caller, configJoinIp, configJoinPort)) { return; }
+        ns_smnet_request_massive_join(configJoinIp, configJoinPort);
+        djui_panel_do_host_with_system(false, true, NS_SOCKET);
+        return;
+    }
+#endif
     network_set_system(NS_SOCKET);
     network_init(NT_CLIENT, false);
     djui_panel_join_message_create(caller);

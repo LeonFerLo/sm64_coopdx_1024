@@ -1,4 +1,7 @@
 #include <stdio.h>
+#ifdef SMNET
+#include "pc/network/smnet/ns_smnet.h"
+#endif
 #include "network_utils.h"
 #include "game/camera.h"
 #include "game/level_update.h"
@@ -16,6 +19,9 @@ u8 network_global_index_from_local(u8 localIndex) {
 }
 
 u8 network_local_index_from_global(u8 globalIndex) {
+#ifdef SMNET
+    { s32 r = ns_smnet_remap_global(globalIndex); if (r >= 0) { return (u8)r; } }
+#endif
     if (gNetworkType == NT_SERVER) { return globalIndex; }
 
     if (gNetworkPlayerLocal == NULL) { return UNKNOWN_LOCAL_INDEX; }

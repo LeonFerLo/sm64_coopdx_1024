@@ -1,22 +1,66 @@
-![sm64coopdx Logo](textures/segment2/custom_coopdx_logo.rgba32.png)
+# sm64coopdx-1024 (beta 1, inestable)
 
-sm64coopdx is an online multiplayer project for the Super Mario 64 PC port that synchronizes all entities and every level for multiple players. The project was started by the Coop Deluxe Team. The purpose is to actively maintain and improve, but also continue sm64ex-coop, created by djoslin0. More features, customization, and power to the Lua API allow modders and players to enjoy Super Mario 64 more than ever!
+Fork de [sm64coopdx](https://github.com/coop-deluxe/sm64coopdx) para **partidas masivas de hasta
+1024 jugadores**. La red de las partidas masivas es **smnet**, propia, P2P con supernodos. Cada
+jugador ve completos a los 15 más cercanos y al resto como "impostores" livianos. Las partidas
+normales (hasta 16) siguen funcionando igual que en el original.
 
-Feel free to report bugs or contribute to the project.
+> ⚠️ **Beta inestable y sin pruebas masivas.** Puede cortarse, desincronizarse o cerrarse.
+> Las estadísticas anónimas (FPS, ping y cantidad de jugadores, sin datos personales) ayudan a
+> mejorarla. Se apagan en Opciones → Partida masiva.
 
-## Initial Goal (Accomplished)
-Create a mod for the PC port where multiple people can play together online.
+**La ROM no se incluye.** Necesitás tu propia copia de Super Mario 64 (US, `baserom.us.z64`).
 
-Unlike previous multiplayer projects, this one synchronizes enemies and events. This allows players to interact with the same world at the same time.
+## Jugar
 
-Interestingly enough though, the goal of the project has slowly evolved over time from simply just making a Super Mario 64 multiplayer mod to constantly maintaining and improving the project (notably the Lua API.)
+1. Bajá la última versión de [Releases](../../releases) y descomprimila.
+2. Abrí el juego y elegí tu ROM cuando la pida.
+3. Join → CoopNet → entrá a una partida que muestre más de 16 jugadores.
 
-## Documentation
+## Qué tiene
 
-sm64coopdx is moddable via Lua, similar to Roblox and Garry's Mod's Lua APIs. To get started, click [here](docs/lua/lua.md) to see the Lua documentation. If you want to contribute to the repo, you can view the C documentation [here](docs/c/c.md).
+- Partidas masivas listadas en CoopNet. Host con más de 16 jugadores abre una.
+- Moderación (pausa → Moderación, o `/help` en el chat): echar, banear, silenciar, moderadores,
+  cerrar la partida y administradores para hosts dedicados (`/miclave`).
+- Opciones → Partida masiva: multitud, jugadores lejanos, conexión lenta, estadísticas.
+- Aviso de versión nueva propio, sin el actualizador del original.
 
-## Wiki
-The wiki is made using GitHub's wiki feature, you can go to the wiki tab or click [here](https://github.com/coop-deluxe/sm64coopdx/wiki).
+## Compilar
 
-## Community
-We have an official Discord server open to the public [here](https://discord.gg/TJVKHS4).
+Igual que sm64coopdx, agregando `SMNET=1`:
+
+```sh
+make -j4 SMNET=1                                   # Windows (MSYS2 MINGW64) o Linux
+make -j4 SMNET=1 COOPNET_SERVIDOR=ip[:puerto]      # apuntando a tu servidor coopnet
+```
+
+`lib/coopnet` trae la libcoopnet modificada. Si cambiás `servidor/coopnet`, rehacela con
+`sh herramientas-1024/compilar-coopnet.sh`.
+
+## Estructura
+
+| Carpeta | Qué es |
+|---|---|
+| (raíz) | el juego: sm64coopdx con los cambios (`src/pc/network/smnet/`, menús en `src/pc/djui/`) |
+| `lib/smnet/` | la biblioteca de red smnet |
+| `servidor/coopnet/` | el servidor coopnet modificado (partidas masivas, encuentro UDP, telemetría) y `despliegue/` para el VPS (servidor + host dedicado) |
+| `herramientas-1024/` | bots de prueba y scripts |
+| `docs-1024/` | documentación técnica ([juego](docs-1024/JUEGO.md), [servidor](docs-1024/SERVIDOR.md)) |
+
+## Servidor propio
+
+En un VPS con Ubuntu o Debian, desde la carpeta del repositorio:
+
+```sh
+sudo sh servidor/coopnet/despliegue/instalar.sh
+sudo sh servidor/coopnet/despliegue/host-dedicado.sh /ruta/a/baserom.us.z64
+```
+
+Los detalles están en [docs-1024/SERVIDOR.md](docs-1024/SERVIDOR.md).
+
+## Créditos y licencias
+
+- sm64coopdx y coopnet: sus autores originales (ver [README-original.md](README-original.md) y
+  `credits.txt`). coopnet está bajo AGPL-3.0 (`servidor/coopnet/LICENSE`).
+- Basado en la decompilación de Super Mario 64. Este proyecto no está afiliado a Nintendo y no
+  distribuye ningún contenido del juego.

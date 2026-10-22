@@ -51,8 +51,15 @@ ENHANCE_LEVEL_TEXTURES ?= 1
 DISCORD_SDK ?= 1
 # Enable CoopNet SDK (used for CoopNet server hosting)
 COOPNET ?= 1
+# Red de supernodos para muchos jugadores (fork sm64coopdx-1024): SMNET=1
+SMNET ?= 0
 # Enable Updater (used for automatic updates)
-UPDATER ?= 1
+# el fork de 1024 (SMNET=1) no lleva el actualizador oficial: instalaría la versión oficial encima
+ifeq ($(SMNET),1)
+  UPDATER ?= 0
+else
+  UPDATER ?= 1
+endif
 # Enable docker build workarounds
 DOCKERBUILD ?= 0
 # Sets your optimization level for building.
@@ -470,6 +477,9 @@ SRC_DIRS := src src/engine src/game src/audio src/menu src/buffers actors levels
 BIN_DIRS := bin bin/$(VERSION)
 
 # PC files
+ifeq ($(SMNET),1)
+  SRC_DIRS += src/pc/network/smnet lib/smnet/src lib/smnet/third_party/monocypher
+endif
 SRC_DIRS += src/pc src/pc/gfx src/pc/audio src/pc/controller src/pc/fs src/pc/fs/packtypes src/pc/mods src/pc/dev src/pc/network src/pc/network/packets src/pc/network/socket src/pc/network/coopnet src/pc/utils src/pc/utils/miniz src/pc/djui src/pc/lua src/pc/lua/utils src/pc/os
 
 ifeq ($(DISCORD_SDK),1)
@@ -709,6 +719,9 @@ ifeq ($(TARGET_N64),1)
   INCLUDE_DIRS += include/libc
 else
   INCLUDE_DIRS += sound lib/lua/include lib/coopnet/include $(EXTRA_INCLUDES)
+  ifeq ($(SMNET),1)
+    INCLUDE_DIRS += lib/smnet/include
+  endif
 endif
 
 # Configure backend flags
@@ -999,6 +1012,26 @@ endif
 ifeq ($(DISCORD_SDK),1)
   CC_CHECK_CFLAGS += -DDISCORD_SDK
   CFLAGS += -DDISCORD_SDK
+endif
+
+# Check for SMNET option
+ifeq ($(SMNET),1)
+  CC_CHECK_CFLAGS += -DSMNET
+  CFLAGS += -DSMNET
+  # servidor coopnet propio por defecto: COOPNET_SERVIDOR=host o host:puerto (sin él, el oficial)
+  ifneq ($(COOPNET_SERVIDOR),)
+    SMNET_CN_HOST := $(word 1,$(subst :, ,$(COOPNET_SERVIDOR)))
+    SMNET_CN_PORT := $(word 2,$(subst :, ,$(COOPNET_SERVIDOR)))
+    CC_CHECK_CFLAGS += -DSMNET_COOPNET_IP='"$(SMNET_CN_HOST)"'
+    CFLAGS += -DSMNET_COOPNET_IP='"$(SMNET_CN_HOST)"'
+    ifneq ($(SMNET_CN_PORT),)
+      CC_CHECK_CFLAGS += -DSMNET_COOPNET_PORT=$(SMNET_CN_PORT)
+      CFLAGS += -DSMNET_COOPNET_PORT=$(SMNET_CN_PORT)
+    endif
+  endif
+  ifeq ($(WINDOWS_BUILD),1)
+    LDFLAGS += -lbcrypt
+  endif
 endif
 
 # Check for COOPNET option

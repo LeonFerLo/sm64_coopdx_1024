@@ -13,6 +13,10 @@
 #ifdef DEVELOPMENT
 #include "pc/dev/chat.h"
 #endif
+#ifdef SMNET
+#include "pc/network/smnet/ns_smnet.h"
+#include "pc/network/smnet/ns_smnet_mod.h"
+#endif
 
 static enum ChatConfirmCommand sConfirming = CCC_NONE;
 static u8 sConfirmPlayerIndex = 0;
@@ -51,6 +55,10 @@ static void chat_construct_player_message(struct NetworkPlayer* np, char* msg) {
 }
 
 bool exec_chat_command(char* command) {
+#ifdef SMNET
+    /* partida masiva: los comandos de moderación (y /help, /jugadores) son los de smnet */
+    if (ns_smnet_massive() && ns_smnet_mod_command(command)) { return true; }
+#endif
     struct NetworkPlayer* npl = &gNetworkPlayers[0];
     enum ChatConfirmCommand ccc = sConfirming;
     sConfirming = CCC_NONE;

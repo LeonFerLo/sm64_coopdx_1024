@@ -1,0 +1,377 @@
+/* generado por herramientas/lowpoly.py: Mario de pocas caras para los impostores bajos y lejanos.
+   Mismo esqueleto que mario_geo_body (20 partes animadas, mismo orden) para que funcionen
+   las animaciones; cada parte es una caja con normales suavizadas y el color de la paleta. */
+#ifdef SMNET
+#include <ultra64.h>
+#include "sm64.h"
+#include "geo_commands.h"
+#include "game/mario_misc.h"
+#include "game/player_palette.h"
+#include "ns_smnet_lowpoly.h"
+#include <stdint.h>
+
+/* DynOS mide las listas que no son de vanilla buscando su centinela (gfx_get_length, la que
+   pone gfx_allocate_internal): sin ella sigue de largo por la memoria y crashea */
+#define LP_SENTINEL {{ _SHIFTL(G_ENDDL, 24, 8) | _SHIFTL(UINT32_MAX, 0, 24), UINT32_MAX }}
+/* sin const: DynOS corrige en el lugar los punteros de las listas de dibujo al cargar el modelo
+   (en Windows, const va a memoria de solo lectura y la escritura crashea) */
+
+static Vtx lp_butt_0_v[] = {
+    {{{ -10, -46, -52 }, 0, { 0, 0 }, { -40, -80, -80, 255 }}},
+    {{{ -10, -46, 52 }, 0, { 0, 0 }, { -40, -80, 80, 255 }}},
+    {{{ -10, 46, -52 }, 0, { 0, 0 }, { -40, 80, -80, 255 }}},
+    {{{ -10, 46, 52 }, 0, { 0, 0 }, { -40, 80, 80, 255 }}},
+    {{{ 75, -46, -52 }, 0, { 0, 0 }, { 40, -80, -80, 255 }}},
+    {{{ 75, -46, 52 }, 0, { 0, 0 }, { 40, -80, 80, 255 }}},
+    {{{ 75, 46, -52 }, 0, { 0, 0 }, { 40, 80, -80, 255 }}},
+    {{{ 75, 46, 52 }, 0, { 0, 0 }, { 40, 80, 80, 255 }}},
+};
+static Gfx lp_butt_dl[] = {
+    gsDPPipeSync(),
+    gsDPSetCombineMode(G_CC_SHADE, G_CC_SHADE),
+    gsSPClearGeometryMode(G_TEXTURE_GEN),
+    gsSPSetGeometryMode(G_LIGHTING | G_SHADE | G_SHADING_SMOOTH | G_CULL_BACK),
+    gsSPNumLights(NUMLIGHTS_1),
+    gsSPCopyLightsPlayerPart(PANTS),
+    gsSPVertex(lp_butt_0_v, 8, 0),
+    gsSP2Triangles(0, 2, 6, 0x0, 0, 6, 4, 0x0),
+    gsSP2Triangles(1, 5, 7, 0x0, 1, 7, 3, 0x0),
+    gsSP2Triangles(0, 4, 5, 0x0, 0, 5, 1, 0x0),
+    gsSP2Triangles(2, 3, 7, 0x0, 2, 7, 6, 0x0),
+    gsSP2Triangles(0, 1, 3, 0x0, 0, 3, 2, 0x0),
+    gsSP2Triangles(4, 6, 7, 0x0, 4, 7, 5, 0x0),
+    gsSPEndDisplayList(),
+    LP_SENTINEL,
+};
+
+static Vtx lp_torso_0_v[] = {
+    {{{ -5, -44, -54 }, 0, { 0, 0 }, { -40, -80, -80, 255 }}},
+    {{{ -5, -44, 54 }, 0, { 0, 0 }, { -40, -80, 80, 255 }}},
+    {{{ -5, 44, -54 }, 0, { 0, 0 }, { -40, 80, -80, 255 }}},
+    {{{ -5, 44, 54 }, 0, { 0, 0 }, { -40, 80, 80, 255 }}},
+    {{{ 70, -44, -54 }, 0, { 0, 0 }, { 40, -80, -80, 255 }}},
+    {{{ 70, -44, 54 }, 0, { 0, 0 }, { 40, -80, 80, 255 }}},
+    {{{ 70, 44, -54 }, 0, { 0, 0 }, { 40, 80, -80, 255 }}},
+    {{{ 70, 44, 54 }, 0, { 0, 0 }, { 40, 80, 80, 255 }}},
+};
+static Vtx lp_torso_1_v[] = {
+    {{{ -5, -46, -50 }, 0, { 0, 0 }, { -40, -80, -80, 255 }}},
+    {{{ -5, -46, 50 }, 0, { 0, 0 }, { -40, -80, 80, 255 }}},
+    {{{ -5, 46, -50 }, 0, { 0, 0 }, { -40, 80, -80, 255 }}},
+    {{{ -5, 46, 50 }, 0, { 0, 0 }, { -40, 80, 80, 255 }}},
+    {{{ 40, -46, -50 }, 0, { 0, 0 }, { 40, -80, -80, 255 }}},
+    {{{ 40, -46, 50 }, 0, { 0, 0 }, { 40, -80, 80, 255 }}},
+    {{{ 40, 46, -50 }, 0, { 0, 0 }, { 40, 80, -80, 255 }}},
+    {{{ 40, 46, 50 }, 0, { 0, 0 }, { 40, 80, 80, 255 }}},
+};
+static Gfx lp_torso_dl[] = {
+    gsDPPipeSync(),
+    gsDPSetCombineMode(G_CC_SHADE, G_CC_SHADE),
+    gsSPClearGeometryMode(G_TEXTURE_GEN),
+    gsSPSetGeometryMode(G_LIGHTING | G_SHADE | G_SHADING_SMOOTH | G_CULL_BACK),
+    gsSPNumLights(NUMLIGHTS_1),
+    gsSPCopyLightsPlayerPart(SHIRT),
+    gsSPVertex(lp_torso_0_v, 8, 0),
+    gsSP2Triangles(0, 2, 6, 0x0, 0, 6, 4, 0x0),
+    gsSP2Triangles(1, 5, 7, 0x0, 1, 7, 3, 0x0),
+    gsSP2Triangles(0, 4, 5, 0x0, 0, 5, 1, 0x0),
+    gsSP2Triangles(2, 3, 7, 0x0, 2, 7, 6, 0x0),
+    gsSP2Triangles(0, 1, 3, 0x0, 0, 3, 2, 0x0),
+    gsSP2Triangles(4, 6, 7, 0x0, 4, 7, 5, 0x0),
+    gsSPCopyLightsPlayerPart(PANTS),
+    gsSPVertex(lp_torso_1_v, 8, 0),
+    gsSP2Triangles(0, 2, 6, 0x0, 0, 6, 4, 0x0),
+    gsSP2Triangles(1, 5, 7, 0x0, 1, 7, 3, 0x0),
+    gsSP2Triangles(0, 4, 5, 0x0, 0, 5, 1, 0x0),
+    gsSP2Triangles(2, 3, 7, 0x0, 2, 7, 6, 0x0),
+    gsSP2Triangles(0, 1, 3, 0x0, 0, 3, 2, 0x0),
+    gsSP2Triangles(4, 6, 7, 0x0, 4, 7, 5, 0x0),
+    gsSPEndDisplayList(),
+    LP_SENTINEL,
+};
+
+static Vtx lp_head_0_v[] = {
+    {{{ -10, -62, -62 }, 0, { 0, 0 }, { -40, -80, -80, 255 }}},
+    {{{ -10, -62, 62 }, 0, { 0, 0 }, { -40, -80, 80, 255 }}},
+    {{{ -10, 62, -62 }, 0, { 0, 0 }, { -40, 80, -80, 255 }}},
+    {{{ -10, 62, 62 }, 0, { 0, 0 }, { -40, 80, 80, 255 }}},
+    {{{ 105, -62, -62 }, 0, { 0, 0 }, { 40, -80, -80, 255 }}},
+    {{{ 105, -62, 62 }, 0, { 0, 0 }, { 40, -80, 80, 255 }}},
+    {{{ 105, 62, -62 }, 0, { 0, 0 }, { 40, 80, -80, 255 }}},
+    {{{ 105, 62, 62 }, 0, { 0, 0 }, { 40, 80, 80, 255 }}},
+};
+static Vtx lp_head_1_v[] = {
+    {{{ 75, -70, -70 }, 0, { 0, 0 }, { -40, -80, -80, 255 }}},
+    {{{ 75, -70, 70 }, 0, { 0, 0 }, { -40, -80, 80, 255 }}},
+    {{{ 75, 70, -70 }, 0, { 0, 0 }, { -40, 80, -80, 255 }}},
+    {{{ 75, 70, 70 }, 0, { 0, 0 }, { -40, 80, 80, 255 }}},
+    {{{ 150, -70, -70 }, 0, { 0, 0 }, { 40, -80, -80, 255 }}},
+    {{{ 150, -70, 70 }, 0, { 0, 0 }, { 40, -80, 80, 255 }}},
+    {{{ 150, 70, -70 }, 0, { 0, 0 }, { 40, 80, -80, 255 }}},
+    {{{ 150, 70, 70 }, 0, { 0, 0 }, { 40, 80, 80, 255 }}},
+};
+static Gfx lp_head_dl[] = {
+    gsDPPipeSync(),
+    gsDPSetCombineMode(G_CC_SHADE, G_CC_SHADE),
+    gsSPClearGeometryMode(G_TEXTURE_GEN),
+    gsSPSetGeometryMode(G_LIGHTING | G_SHADE | G_SHADING_SMOOTH | G_CULL_BACK),
+    gsSPNumLights(NUMLIGHTS_1),
+    gsSPCopyLightsPlayerPart(SKIN),
+    gsSPVertex(lp_head_0_v, 8, 0),
+    gsSP2Triangles(0, 2, 6, 0x0, 0, 6, 4, 0x0),
+    gsSP2Triangles(1, 5, 7, 0x0, 1, 7, 3, 0x0),
+    gsSP2Triangles(0, 4, 5, 0x0, 0, 5, 1, 0x0),
+    gsSP2Triangles(2, 3, 7, 0x0, 2, 7, 6, 0x0),
+    gsSP2Triangles(0, 1, 3, 0x0, 0, 3, 2, 0x0),
+    gsSP2Triangles(4, 6, 7, 0x0, 4, 7, 5, 0x0),
+    gsSPCopyLightsPlayerPart(CAP),
+    gsSPVertex(lp_head_1_v, 8, 0),
+    gsSP2Triangles(0, 2, 6, 0x0, 0, 6, 4, 0x0),
+    gsSP2Triangles(1, 5, 7, 0x0, 1, 7, 3, 0x0),
+    gsSP2Triangles(0, 4, 5, 0x0, 0, 5, 1, 0x0),
+    gsSP2Triangles(2, 3, 7, 0x0, 2, 7, 6, 0x0),
+    gsSP2Triangles(0, 1, 3, 0x0, 0, 3, 2, 0x0),
+    gsSP2Triangles(4, 6, 7, 0x0, 4, 7, 5, 0x0),
+    gsSPEndDisplayList(),
+    LP_SENTINEL,
+};
+
+static Vtx lp_arm_0_v[] = {
+    {{{ -8, -20, -20 }, 0, { 0, 0 }, { -40, -80, -80, 255 }}},
+    {{{ -8, -20, 20 }, 0, { 0, 0 }, { -40, -80, 80, 255 }}},
+    {{{ -8, 20, -20 }, 0, { 0, 0 }, { -40, 80, -80, 255 }}},
+    {{{ -8, 20, 20 }, 0, { 0, 0 }, { -40, 80, 80, 255 }}},
+    {{{ 70, -20, -20 }, 0, { 0, 0 }, { 40, -80, -80, 255 }}},
+    {{{ 70, -20, 20 }, 0, { 0, 0 }, { 40, -80, 80, 255 }}},
+    {{{ 70, 20, -20 }, 0, { 0, 0 }, { 40, 80, -80, 255 }}},
+    {{{ 70, 20, 20 }, 0, { 0, 0 }, { 40, 80, 80, 255 }}},
+};
+static Gfx lp_arm_dl[] = {
+    gsDPPipeSync(),
+    gsDPSetCombineMode(G_CC_SHADE, G_CC_SHADE),
+    gsSPClearGeometryMode(G_TEXTURE_GEN),
+    gsSPSetGeometryMode(G_LIGHTING | G_SHADE | G_SHADING_SMOOTH | G_CULL_BACK),
+    gsSPNumLights(NUMLIGHTS_1),
+    gsSPCopyLightsPlayerPart(SHIRT),
+    gsSPVertex(lp_arm_0_v, 8, 0),
+    gsSP2Triangles(0, 2, 6, 0x0, 0, 6, 4, 0x0),
+    gsSP2Triangles(1, 5, 7, 0x0, 1, 7, 3, 0x0),
+    gsSP2Triangles(0, 4, 5, 0x0, 0, 5, 1, 0x0),
+    gsSP2Triangles(2, 3, 7, 0x0, 2, 7, 6, 0x0),
+    gsSP2Triangles(0, 1, 3, 0x0, 0, 3, 2, 0x0),
+    gsSP2Triangles(4, 6, 7, 0x0, 4, 7, 5, 0x0),
+    gsSPEndDisplayList(),
+    LP_SENTINEL,
+};
+
+static Vtx lp_forearm_0_v[] = {
+    {{{ -6, -18, -18 }, 0, { 0, 0 }, { -40, -80, -80, 255 }}},
+    {{{ -6, -18, 18 }, 0, { 0, 0 }, { -40, -80, 80, 255 }}},
+    {{{ -6, 18, -18 }, 0, { 0, 0 }, { -40, 80, -80, 255 }}},
+    {{{ -6, 18, 18 }, 0, { 0, 0 }, { -40, 80, 80, 255 }}},
+    {{{ 64, -18, -18 }, 0, { 0, 0 }, { 40, -80, -80, 255 }}},
+    {{{ 64, -18, 18 }, 0, { 0, 0 }, { 40, -80, 80, 255 }}},
+    {{{ 64, 18, -18 }, 0, { 0, 0 }, { 40, 80, -80, 255 }}},
+    {{{ 64, 18, 18 }, 0, { 0, 0 }, { 40, 80, 80, 255 }}},
+};
+static Gfx lp_forearm_dl[] = {
+    gsDPPipeSync(),
+    gsDPSetCombineMode(G_CC_SHADE, G_CC_SHADE),
+    gsSPClearGeometryMode(G_TEXTURE_GEN),
+    gsSPSetGeometryMode(G_LIGHTING | G_SHADE | G_SHADING_SMOOTH | G_CULL_BACK),
+    gsSPNumLights(NUMLIGHTS_1),
+    gsSPCopyLightsPlayerPart(SHIRT),
+    gsSPVertex(lp_forearm_0_v, 8, 0),
+    gsSP2Triangles(0, 2, 6, 0x0, 0, 6, 4, 0x0),
+    gsSP2Triangles(1, 5, 7, 0x0, 1, 7, 3, 0x0),
+    gsSP2Triangles(0, 4, 5, 0x0, 0, 5, 1, 0x0),
+    gsSP2Triangles(2, 3, 7, 0x0, 2, 7, 6, 0x0),
+    gsSP2Triangles(0, 1, 3, 0x0, 0, 3, 2, 0x0),
+    gsSP2Triangles(4, 6, 7, 0x0, 4, 7, 5, 0x0),
+    gsSPEndDisplayList(),
+    LP_SENTINEL,
+};
+
+static Vtx lp_hand_0_v[] = {
+    {{{ -6, -26, -24 }, 0, { 0, 0 }, { -40, -80, -80, 255 }}},
+    {{{ -6, -26, 24 }, 0, { 0, 0 }, { -40, -80, 80, 255 }}},
+    {{{ -6, 26, -24 }, 0, { 0, 0 }, { -40, 80, -80, 255 }}},
+    {{{ -6, 26, 24 }, 0, { 0, 0 }, { -40, 80, 80, 255 }}},
+    {{{ 46, -26, -24 }, 0, { 0, 0 }, { 40, -80, -80, 255 }}},
+    {{{ 46, -26, 24 }, 0, { 0, 0 }, { 40, -80, 80, 255 }}},
+    {{{ 46, 26, -24 }, 0, { 0, 0 }, { 40, 80, -80, 255 }}},
+    {{{ 46, 26, 24 }, 0, { 0, 0 }, { 40, 80, 80, 255 }}},
+};
+static Gfx lp_hand_dl[] = {
+    gsDPPipeSync(),
+    gsDPSetCombineMode(G_CC_SHADE, G_CC_SHADE),
+    gsSPClearGeometryMode(G_TEXTURE_GEN),
+    gsSPSetGeometryMode(G_LIGHTING | G_SHADE | G_SHADING_SMOOTH | G_CULL_BACK),
+    gsSPNumLights(NUMLIGHTS_1),
+    gsSPCopyLightsPlayerPart(GLOVES),
+    gsSPVertex(lp_hand_0_v, 8, 0),
+    gsSP2Triangles(0, 2, 6, 0x0, 0, 6, 4, 0x0),
+    gsSP2Triangles(1, 5, 7, 0x0, 1, 7, 3, 0x0),
+    gsSP2Triangles(0, 4, 5, 0x0, 0, 5, 1, 0x0),
+    gsSP2Triangles(2, 3, 7, 0x0, 2, 7, 6, 0x0),
+    gsSP2Triangles(0, 1, 3, 0x0, 0, 3, 2, 0x0),
+    gsSP2Triangles(4, 6, 7, 0x0, 4, 7, 5, 0x0),
+    gsSPEndDisplayList(),
+    LP_SENTINEL,
+};
+
+static Vtx lp_thigh_0_v[] = {
+    {{{ -10, -30, -30 }, 0, { 0, 0 }, { -40, -80, -80, 255 }}},
+    {{{ -10, -30, 30 }, 0, { 0, 0 }, { -40, -80, 80, 255 }}},
+    {{{ -10, 30, -30 }, 0, { 0, 0 }, { -40, 80, -80, 255 }}},
+    {{{ -10, 30, 30 }, 0, { 0, 0 }, { -40, 80, 80, 255 }}},
+    {{{ 95, -30, -30 }, 0, { 0, 0 }, { 40, -80, -80, 255 }}},
+    {{{ 95, -30, 30 }, 0, { 0, 0 }, { 40, -80, 80, 255 }}},
+    {{{ 95, 30, -30 }, 0, { 0, 0 }, { 40, 80, -80, 255 }}},
+    {{{ 95, 30, 30 }, 0, { 0, 0 }, { 40, 80, 80, 255 }}},
+};
+static Gfx lp_thigh_dl[] = {
+    gsDPPipeSync(),
+    gsDPSetCombineMode(G_CC_SHADE, G_CC_SHADE),
+    gsSPClearGeometryMode(G_TEXTURE_GEN),
+    gsSPSetGeometryMode(G_LIGHTING | G_SHADE | G_SHADING_SMOOTH | G_CULL_BACK),
+    gsSPNumLights(NUMLIGHTS_1),
+    gsSPCopyLightsPlayerPart(PANTS),
+    gsSPVertex(lp_thigh_0_v, 8, 0),
+    gsSP2Triangles(0, 2, 6, 0x0, 0, 6, 4, 0x0),
+    gsSP2Triangles(1, 5, 7, 0x0, 1, 7, 3, 0x0),
+    gsSP2Triangles(0, 4, 5, 0x0, 0, 5, 1, 0x0),
+    gsSP2Triangles(2, 3, 7, 0x0, 2, 7, 6, 0x0),
+    gsSP2Triangles(0, 1, 3, 0x0, 0, 3, 2, 0x0),
+    gsSP2Triangles(4, 6, 7, 0x0, 4, 7, 5, 0x0),
+    gsSPEndDisplayList(),
+    LP_SENTINEL,
+};
+
+static Vtx lp_leg_0_v[] = {
+    {{{ -8, -26, -26 }, 0, { 0, 0 }, { -40, -80, -80, 255 }}},
+    {{{ -8, -26, 26 }, 0, { 0, 0 }, { -40, -80, 80, 255 }}},
+    {{{ -8, 26, -26 }, 0, { 0, 0 }, { -40, 80, -80, 255 }}},
+    {{{ -8, 26, 26 }, 0, { 0, 0 }, { -40, 80, 80, 255 }}},
+    {{{ 72, -26, -26 }, 0, { 0, 0 }, { 40, -80, -80, 255 }}},
+    {{{ 72, -26, 26 }, 0, { 0, 0 }, { 40, -80, 80, 255 }}},
+    {{{ 72, 26, -26 }, 0, { 0, 0 }, { 40, 80, -80, 255 }}},
+    {{{ 72, 26, 26 }, 0, { 0, 0 }, { 40, 80, 80, 255 }}},
+};
+static Gfx lp_leg_dl[] = {
+    gsDPPipeSync(),
+    gsDPSetCombineMode(G_CC_SHADE, G_CC_SHADE),
+    gsSPClearGeometryMode(G_TEXTURE_GEN),
+    gsSPSetGeometryMode(G_LIGHTING | G_SHADE | G_SHADING_SMOOTH | G_CULL_BACK),
+    gsSPNumLights(NUMLIGHTS_1),
+    gsSPCopyLightsPlayerPart(PANTS),
+    gsSPVertex(lp_leg_0_v, 8, 0),
+    gsSP2Triangles(0, 2, 6, 0x0, 0, 6, 4, 0x0),
+    gsSP2Triangles(1, 5, 7, 0x0, 1, 7, 3, 0x0),
+    gsSP2Triangles(0, 4, 5, 0x0, 0, 5, 1, 0x0),
+    gsSP2Triangles(2, 3, 7, 0x0, 2, 7, 6, 0x0),
+    gsSP2Triangles(0, 1, 3, 0x0, 0, 3, 2, 0x0),
+    gsSP2Triangles(4, 6, 7, 0x0, 4, 7, 5, 0x0),
+    gsSPEndDisplayList(),
+    LP_SENTINEL,
+};
+
+static Vtx lp_foot_0_v[] = {
+    {{{ -10, -32, -28 }, 0, { 0, 0 }, { -40, -80, -80, 255 }}},
+    {{{ -10, -32, 28 }, 0, { 0, 0 }, { -40, -80, 80, 255 }}},
+    {{{ -10, 32, -28 }, 0, { 0, 0 }, { -40, 80, -80, 255 }}},
+    {{{ -10, 32, 28 }, 0, { 0, 0 }, { -40, 80, 80, 255 }}},
+    {{{ 44, -32, -28 }, 0, { 0, 0 }, { 40, -80, -80, 255 }}},
+    {{{ 44, -32, 28 }, 0, { 0, 0 }, { 40, -80, 80, 255 }}},
+    {{{ 44, 32, -28 }, 0, { 0, 0 }, { 40, 80, -80, 255 }}},
+    {{{ 44, 32, 28 }, 0, { 0, 0 }, { 40, 80, 80, 255 }}},
+};
+static Gfx lp_foot_dl[] = {
+    gsDPPipeSync(),
+    gsDPSetCombineMode(G_CC_SHADE, G_CC_SHADE),
+    gsSPClearGeometryMode(G_TEXTURE_GEN),
+    gsSPSetGeometryMode(G_LIGHTING | G_SHADE | G_SHADING_SMOOTH | G_CULL_BACK),
+    gsSPNumLights(NUMLIGHTS_1),
+    gsSPCopyLightsPlayerPart(SHOES),
+    gsSPVertex(lp_foot_0_v, 8, 0),
+    gsSP2Triangles(0, 2, 6, 0x0, 0, 6, 4, 0x0),
+    gsSP2Triangles(1, 5, 7, 0x0, 1, 7, 3, 0x0),
+    gsSP2Triangles(0, 4, 5, 0x0, 0, 5, 1, 0x0),
+    gsSP2Triangles(2, 3, 7, 0x0, 2, 7, 6, 0x0),
+    gsSP2Triangles(0, 1, 3, 0x0, 0, 3, 2, 0x0),
+    gsSP2Triangles(4, 6, 7, 0x0, 4, 7, 5, 0x0),
+    gsSPEndDisplayList(),
+    LP_SENTINEL,
+};
+
+extern const Gfx mario_material_revert_render_settings[];
+static const GeoLayout lp_body[] = {
+   GEO_ANIMATED_PART(LAYER_OPAQUE, 0, 0, 0, NULL),
+   GEO_OPEN_NODE(),
+      GEO_ANIMATED_PART(LAYER_OPAQUE, 0, 0, 0, lp_butt_dl),
+      GEO_OPEN_NODE(),
+         GEO_ANIMATED_PART(LAYER_OPAQUE, 68, 0, 0, lp_torso_dl),
+         GEO_OPEN_NODE(),
+            GEO_ANIMATED_PART(LAYER_OPAQUE, 87, 0, 0, lp_head_dl),
+            GEO_ANIMATED_PART(LAYER_OPAQUE, 67, -10, 79, NULL),
+            GEO_OPEN_NODE(),
+               GEO_ANIMATED_PART(LAYER_OPAQUE, 0, 0, 0, lp_arm_dl),
+               GEO_OPEN_NODE(),
+                  GEO_ANIMATED_PART(LAYER_OPAQUE, 65, 0, 0, lp_forearm_dl),
+                  GEO_OPEN_NODE(),
+                     GEO_ANIMATED_PART(LAYER_OPAQUE, 60, 0, 0, lp_hand_dl),
+                  GEO_CLOSE_NODE(),
+               GEO_CLOSE_NODE(),
+            GEO_CLOSE_NODE(),
+            GEO_ANIMATED_PART(LAYER_OPAQUE, 68, -10, -79, NULL),
+            GEO_OPEN_NODE(),
+               GEO_ANIMATED_PART(LAYER_OPAQUE, 0, 0, 0, lp_arm_dl),
+               GEO_OPEN_NODE(),
+                  GEO_ANIMATED_PART(LAYER_OPAQUE, 65, 0, 0, lp_forearm_dl),
+                  GEO_OPEN_NODE(),
+                     GEO_ANIMATED_PART(LAYER_OPAQUE, 60, 0, 0, lp_hand_dl),
+                  GEO_CLOSE_NODE(),
+               GEO_CLOSE_NODE(),
+            GEO_CLOSE_NODE(),
+         GEO_CLOSE_NODE(),
+         GEO_ANIMATED_PART(LAYER_OPAQUE, 13, -8, 42, NULL),
+         GEO_OPEN_NODE(),
+            GEO_ANIMATED_PART(LAYER_OPAQUE, 0, 0, 0, lp_thigh_dl),
+            GEO_OPEN_NODE(),
+               GEO_ANIMATED_PART(LAYER_OPAQUE, 89, 0, 0, lp_leg_dl),
+               GEO_OPEN_NODE(),
+                  GEO_ANIMATED_PART(LAYER_OPAQUE, 67, 0, 0, lp_foot_dl),
+               GEO_CLOSE_NODE(),
+            GEO_CLOSE_NODE(),
+         GEO_CLOSE_NODE(),
+         GEO_ANIMATED_PART(LAYER_OPAQUE, 13, -8, -42, NULL),
+         GEO_OPEN_NODE(),
+            GEO_ANIMATED_PART(LAYER_OPAQUE, 0, 0, 0, lp_thigh_dl),
+            GEO_OPEN_NODE(),
+               GEO_ANIMATED_PART(LAYER_OPAQUE, 89, 0, 0, lp_leg_dl),
+               GEO_OPEN_NODE(),
+                  GEO_ANIMATED_PART(LAYER_OPAQUE, 67, 0, 0, lp_foot_dl),
+               GEO_CLOSE_NODE(),
+            GEO_CLOSE_NODE(),
+         GEO_CLOSE_NODE(),
+      GEO_CLOSE_NODE(),
+   GEO_CLOSE_NODE(),
+   GEO_RETURN(),
+};
+
+const GeoLayout ns_smnet_lowpoly_geo[] = {
+   GEO_NODE_START(),
+   GEO_OPEN_NODE(),
+      GEO_SHADOW(SHADOW_CIRCLE_PLAYER, 0xB4, 100),
+      GEO_OPEN_NODE(),
+         GEO_SCALE(0x00, 16384),
+         GEO_OPEN_NODE(),
+            GEO_ASM(LAYER_OPAQUE + 3, geo_mario_set_player_colors),
+            GEO_BRANCH(1, lp_body),
+         GEO_CLOSE_NODE(),
+      GEO_CLOSE_NODE(),
+      GEO_DISPLAY_LIST(LAYER_OPAQUE, mario_material_revert_render_settings),
+   GEO_CLOSE_NODE(),
+   GEO_END(),
+};
+#endif

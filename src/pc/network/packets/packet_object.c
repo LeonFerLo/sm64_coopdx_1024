@@ -1,3 +1,4 @@
+#include "pc/network/smnet/ns_smnet.h"
 #include <stdio.h>
 #include <limits.h>
 #include "../network.h"
@@ -121,7 +122,13 @@ static struct SyncObject* packet_read_object_header(struct Packet* p, u8* fromLo
     // make sure this is the newest event possible
     u16 eventId = 0;
     packet_read(p, &eventId, sizeof(u16));
-    if (so->rxEventId[*fromLocalIndex] > eventId && (u16)abs(eventId - so->rxEventId[*fromLocalIndex]) < USHRT_MAX / 2) {
+#ifdef SMNET
+    /* modo masivo: los que no tienen slot llegan todos como índice 0 (cada uno con su cuenta) */
+    bool shared = (*fromLocalIndex == 0 && ns_smnet_rx_from_other());
+#else
+    bool shared = false;
+#endif
+    if (!shared && so->rxEventId[*fromLocalIndex] > eventId && (u16)abs(eventId - so->rxEventId[*fromLocalIndex]) < USHRT_MAX / 2) {
         LOG_INFO("ignored sync object due to eventId");
         return NULL;
     }

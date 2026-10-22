@@ -1,0 +1,25 @@
+# Servidor coopnet de sm64coopdx-1024 (lista de partidas + encuentro UDP + telemetría).
+# Lo instala instalar.sh; la configuración está en /etc/coopnet-1024.env.
+[Unit]
+Description=coopnet para sm64coopdx-1024
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=coopnet
+Group=coopnet
+EnvironmentFile=/etc/coopnet-1024.env
+WorkingDirectory=/var/lib/coopnet
+ExecStart=/opt/coopnet/server
+Restart=always
+RestartSec=3
+# un poco de encierro: solo escribe en /var/lib/coopnet
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/coopnet
+PrivateTmp=true
+LimitNOFILE=65536
+
+[Install]
+WantedBy=multi-user.target

@@ -1,3 +1,6 @@
+#ifdef SMNET
+#include "pc/network/smnet/ns_smnet_lobby.h"
+#endif
 #include <stdio.h>
 #include "djui.h"
 #include "djui_panel.h"
@@ -72,9 +75,24 @@ static void djui_panel_host_do_host(struct DjuiBase* caller) {
     }
 
     // Doesn't let you host if the player limit is not good
+#ifdef SMNET
+    if (configAmountOfPlayers < 1 || configAmountOfPlayers > 1024) {
+        return;
+    }
+    /* CoopNet con más de 16: partida masiva (smnet) que se lista en coopnet */
+    if (gNetworkType != NT_SERVER && configNetworkSystem == NS_COOPNET && configAmountOfPlayers > MAX_PLAYERS) {
+        configHostPort = atoi(sInputboxPort->buffer);
+        extern void djui_panel_do_host_with_system(bool reconnecting, bool playSound, int system);
+        network_reset_reconnect_and_rehost();
+        ns_smnet_lobby_host_request();
+        djui_panel_do_host_with_system(false, true, NS_SOCKET);
+        return;
+    }
+#else
     if (configAmountOfPlayers < 1 || configAmountOfPlayers > MAX_PLAYERS) {
         return;
     }
+#endif
 
     configHostPort = atoi(sInputboxPort->buffer);
 

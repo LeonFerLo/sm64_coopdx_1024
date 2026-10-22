@@ -1,3 +1,4 @@
+#include "pc/network/smnet/ns_smnet.h"
 #include "socket/socket.h"
 #include "coopnet/coopnet.h"
 #include <stdio.h>
@@ -100,7 +101,13 @@ void network_set_system(enum NetworkSystemType nsType) {
     network_forget_all_reliable();
 
     switch (nsType) {
-        case NS_SOCKET:  gNetworkSystem = &gNetworkSystemSocket; break;
+        case NS_SOCKET:
+#ifdef SMNET
+            gNetworkSystem = ns_smnet_wanted() ? &gNetworkSystemSmnet : &gNetworkSystemSocket;
+#else
+            gNetworkSystem = &gNetworkSystemSocket;
+#endif
+            break;
 #ifdef COOPNET
         case NS_COOPNET: gNetworkSystem = &gNetworkSystemCoopNet; break;
 #endif
@@ -134,7 +141,7 @@ bool network_init(enum NetworkType inNetworkType, bool reconnecting) {
     gServerSettings.enablePlayersInLevelDisplay = TRUE;
     gServerSettings.enablePlayerList = TRUE;
     gServerSettings.nametags = configNametags;
-    gServerSettings.maxPlayers = configAmountOfPlayers;
+    gServerSettings.maxPlayers = configAmountOfPlayers > MAX_PLAYERS ? MAX_PLAYERS : configAmountOfPlayers;   /* más de 16: masiva (smnet), con 16 lugares internos */
     gServerSettings.pauseAnywhere = configPauseAnywhere;
     gServerSettings.pvpType = configPvpType;
     gServerSettings.headlessServer = gCLIOpts.headless && (inNetworkType == NT_SERVER);
@@ -253,6 +260,10 @@ void network_send_to(u8 localIndex, struct Packet* p) {
         LOG_ERROR("no data to send");
         return;
     }
+#ifdef SMNET
+    /* modo masivo: los paquetes de Lua de los mods van por smnet (ns_smnet.c) */
+    if (ns_smnet_massive() && ns_smnet_relay_packet(p, localIndex)) { return; }
+#endif
 
     // set destination
     if (localIndex == PACKET_DESTINATION_SERVER) {
@@ -378,6 +389,9 @@ void network_send(struct Packet* p) {
 
     // set the flags again
     packet_set_flags(p);
+#ifdef SMNET
+    if (ns_smnet_massive() && ns_smnet_relay_packet(p, 0)) { return; }
+#endif
 
     if (gNetworkType != NT_SERVER) {
         p->requestBroadcast = TRUE;
@@ -566,6 +580,9 @@ void network_update(void) {
 
     network_rehost_update();
     network_reconnect_update();
+#ifdef SMNET
+    ns_smnet_prejoin_tick();   /* Join masivo: bajando los mods de la partida */
+#endif
 
 #ifdef COOPNET
     network_update_coopnet();

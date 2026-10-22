@@ -25,6 +25,7 @@ enum MPacketErrorNumber {
     MERR_LOBBY_PASSWORD_INCORRECT,
     MERR_COOPNET_VERSION,
     MERR_PEER_FAILED,
+    MERR_LOBBY_MASSIVE,     /* partida masiva: se entra por el encuentro UDP (smnet), no por coopnet */
     MERR_MAX,
 };
 
@@ -41,6 +42,8 @@ typedef struct {
     void (*OnPeerConnected)(uint64_t aPeerId);
     void (*OnPeerDisconnected)(uint64_t aPeerId);
     void (*OnLoadBalance)(const char* aHost, uint32_t port);
+    /* partida masiva creada: clave para registrarse en el encuentro UDP y sus dos puertos */
+    void (*OnMassiveLobby)(uint64_t aLobbyId, const uint8_t aSecret[16], uint16_t aPortA, uint16_t aPortB);
     uint64_t (*DestIdFunction)(uint64_t aInput);
 #if defined(__cplusplus)
     bool (*ConnectionIsAllowed)(Connection*, bool);

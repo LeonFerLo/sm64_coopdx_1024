@@ -14,6 +14,11 @@
 #include "pc/lua/smlua_hooks.h"
 #include "game/object_helpers.h"
 #include "behavior_table.h"
+#ifdef SMNET
+#include "pc/network/smnet/ns_smnet.h"
+#include "pc/network/smnet/ns_smnet_mod.h"
+#include "djui_panel_smnet_mod.h"
+#endif
 
 bool gDjuiPanelPauseCreated = false;
 
@@ -35,6 +40,29 @@ void djui_panel_pause_disconnect_key_update(int scancode) {
         }
     }
 }
+
+#ifdef SMNET
+/* modo masivo: el host puede salir (la partida sigue sin él y, si le vuelve a dar Host, vuelve a
+   entrar como host) o finalizarla (todos pierden la conexión); los demás solo salen */
+static void djui_panel_pause_end_yes(UNUSED struct DjuiBase* caller) {
+    djui_panel_shutdown();
+    ns_smnet_end_game();
+}
+static void djui_panel_pause_massive_leave(struct DjuiBase* caller) {
+    if (gMarioStates[0].action == ACT_PUSHING_DOOR || gMarioStates[0].action == ACT_PULLING_DOOR) { return; }
+    djui_panel_confirm_create(caller, "Salir de la partida",
+        ns_smnet_is_game_host()
+            ? "Salís, pero la partida sigue andando sin vos.\nSi le volvés a dar a Host, volvés a entrar a esta misma partida y seguís siendo el host."
+            : "¿Salir de la partida?\nLos demás siguen jugando.",
+        djui_panel_pause_quit_yes);
+}
+static void djui_panel_pause_massive_end(struct DjuiBase* caller) {
+    if (gMarioStates[0].action == ACT_PUSHING_DOOR || gMarioStates[0].action == ACT_PULLING_DOOR) { return; }
+    djui_panel_confirm_create(caller, "Finalizar partida",
+        "Se termina la partida para todos: todos los jugadores pierden la conexión y vuelven al menú.\nSi solo querés irte y volver después, usá \"Salir de la partida\".",
+        djui_panel_pause_end_yes);
+}
+#endif
 
 static void djui_panel_pause_quit(struct DjuiBase* caller) {
     if (gMarioStates[0].action == ACT_PUSHING_DOOR || gMarioStates[0].action == ACT_PULLING_DOOR) { return; }
@@ -69,6 +97,11 @@ void djui_panel_pause_create(struct DjuiBase* caller) {
         struct DjuiButton* button3 = djui_button_create(body, DLANG(PAUSE, OPTIONS), DJUI_BUTTON_STYLE_NORMAL, djui_panel_options_create);
         defaultBase = &button3->base;
 
+#ifdef SMNET
+        if (ns_smnet_joined_game()) {
+            /* se unió a la partida de otro: los ajustes de la partida son del host */
+        } else
+#endif
         if (gNetworkType == NT_SERVER) {
             djui_button_create(body, DLANG(PAUSE, SERVER_SETTINGS), DJUI_BUTTON_STYLE_NORMAL, djui_panel_host_create);
         } else {
@@ -107,8 +140,21 @@ void djui_panel_pause_create(struct DjuiBase* caller) {
             djui_button_create(body, DLANG(PAUSE, MOD_MENU), DJUI_BUTTON_STYLE_NORMAL, djui_panel_mod_menu_create);
         }
 
+#ifdef SMNET
+        if (ns_smnet_massive() && ns_smnet_mod_can_moderate()) {
+            djui_button_create(body, "Moderación", DJUI_BUTTON_STYLE_NORMAL, djui_panel_smnet_mod_create);
+        }
+#endif
         djui_button_create(body, DLANG(PAUSE, RESUME), DJUI_BUTTON_STYLE_NORMAL, djui_panel_pause_resume);
 
+#ifdef SMNET
+        if (ns_smnet_is_game_host()) {
+            djui_button_create(body, "Salir de la partida", DJUI_BUTTON_STYLE_BACK, djui_panel_pause_massive_leave);
+            djui_button_create(body, DLANG(PAUSE, STOP_HOSTING), DJUI_BUTTON_STYLE_BACK, djui_panel_pause_massive_end);
+        } else if (ns_smnet_joined_game()) {
+            djui_button_create(body, DLANG(PAUSE, DISCONNECT), DJUI_BUTTON_STYLE_BACK, djui_panel_pause_massive_leave);
+        } else
+#endif
         if (gNetworkType == NT_SERVER) {
             djui_button_create(body, DLANG(PAUSE, STOP_HOSTING), DJUI_BUTTON_STYLE_BACK, djui_panel_pause_quit);
         } else {

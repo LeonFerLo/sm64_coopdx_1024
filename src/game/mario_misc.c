@@ -1,3 +1,6 @@
+#ifdef SMNET
+#include "pc/network/smnet/ns_smnet.h"
+#endif
 #include <PR/ultratypes.h>
 
 #include "sm64.h"
@@ -77,9 +80,28 @@ static s8 gMarioAttackScaleAnimation[3 * 6] = {
     10, 12, 16, 24, 10, 10, 10, 14, 20, 30, 10, 10, 10, 16, 20, 26, 26, 20,
 };
 
-struct MarioBodyState gBodyStates[MAX_PLAYERS];
+struct MarioBodyState gBodyStates[MAX_PLAYERS + SMNET_RENDER_EXTRA];
 struct GraphNodeObject gMirrorMario[MAX_PLAYERS];  // copy of Mario's geo node for drawing mirror Mario
-struct PlayerColor gNetworkPlayerColors[MAX_PLAYERS];
+struct PlayerColor gNetworkPlayerColors[MAX_PLAYERS + SMNET_RENDER_EXTRA];
+
+/* Modo masivo: un objeto impostor con el modelo de Mario se dibuja con el índice
+   MAX_PLAYERS + k. Las tablas de solo dibujo (gBodyStates, gNetworkPlayerColors,
+   gPlayerCameraState, sMarioAttackAnimCounter) tienen esos lugares de más; lo que viene de
+   gNetworkPlayers y gMarioStates (usadas por todo el juego, de MAX_PLAYERS) pasa por estas
+   funciones, que para un impostor devuelven sus datos (ns_smnet.c). */
+static const struct PlayerPalette* geo_player_palette(u16 index) {
+#ifdef SMNET
+    if (index >= MAX_PLAYERS) { return ns_smnet_impostor_palette(index - MAX_PLAYERS); }
+#endif
+    return &gNetworkPlayers[index].overridePalette;
+}
+
+static u8 geo_player_model(u16 index) {
+#ifdef SMNET
+    if (index >= MAX_PLAYERS) { return ns_smnet_impostor_model(index - MAX_PLAYERS); }
+#endif
+    return gNetworkPlayers[index].overrideModelIndex;
+}
 
 // This whole file is weirdly organized. It has to be the same file due
 // to rodata boundaries and function aligns, which means the programmer
@@ -339,7 +361,13 @@ static s8 geo_get_processing_mirror_mario_index(struct Object *obj) {
     return (ptrDiff >= 0 && ptrDiff < MAX_PLAYERS) ? ptrDiff : -1;
 }
 
-static u8 geo_get_processing_object_index(void) {
+static u16 geo_get_processing_object_index(void) {
+#ifdef SMNET
+    {
+        s32 imp = ns_smnet_impostor_index(gCurGraphNodeProcessingObject);
+        if (imp >= 0 && imp < SMNET_RENDER_EXTRA) { return (u16)(MAX_PLAYERS + imp); }
+    }
+#endif
     s8 index = geo_get_processing_mirror_mario_index(gCurGraphNodeProcessingObject);
     if (index != -1) {
         return index;
@@ -368,12 +396,15 @@ s8 geo_get_processing_mario_index(struct Object *obj) {
 }
 
 struct MarioState *geo_get_mario_state(void) {
-    u8 index = geo_get_processing_object_index();
+    u16 index = geo_get_processing_object_index();
+#ifdef SMNET
+    if (index >= MAX_PLAYERS) { return ns_smnet_impostor_mario_state(index - MAX_PLAYERS); }
+#endif
     return &gMarioStates[index];
 }
 
 struct MarioBodyState *geo_get_body_state(void) {
-    u8 index = geo_get_processing_object_index();
+    u16 index = geo_get_processing_object_index();
     return &gBodyStates[index];
 }
 
@@ -464,17 +495,17 @@ Gfx* geo_switch_mario_eyes(s32 callContext, struct GraphNode* node, UNUSED Mat4*
  */
 Gfx* geo_mario_tilt_torso(s32 callContext, struct GraphNode* node, Mat4* mtx) {
     Mat4 * curTransform = mtx;
-    u8 plrIdx = geo_get_processing_object_index();
+    u16 plrIdx = geo_get_processing_object_index();
     struct Object *marioObject = geo_get_mario_object();
     struct MarioBodyState* bodyState = &gBodyStates[plrIdx];
     s32 action = bodyState->action;
 
     // update mirrorMario only if it's a valid Mario
     if (marioObject != NULL) {
-        bodyState->mirrorMario = gCurGraphNodeObject == &gMirrorMario[plrIdx];
+        bodyState->mirrorMario = plrIdx < MAX_PLAYERS && gCurGraphNodeObject == &gMirrorMario[plrIdx];
     }
 
-    u8 charIndex = gNetworkPlayers[plrIdx].overrideModelIndex;
+    u8 charIndex = geo_player_model(plrIdx);
     if (charIndex >= CT_MAX) { charIndex = 0; }
     struct Character* character = &gCharacters[charIndex];
 
@@ -502,17 +533,19 @@ Gfx* geo_mario_tilt_torso(s32 callContext, struct GraphNode* node, Mat4* mtx) {
  * Makes Mario's head rotate with the camera angle when in C-up mode
  */
 Gfx* geo_mario_head_rotation(s32 callContext, struct GraphNode* node, Mat4* c) {
-    u8 plrIdx = geo_get_processing_object_index();
+    u16 plrIdx = geo_get_processing_object_index();
     struct Object *marioObject = geo_get_mario_object();
     struct MarioBodyState* bodyState = &gBodyStates[plrIdx];
     s32 action = bodyState->action;
 
     // update mirrorMario only if it's a valid Mario
     if (marioObject != NULL) {
-        bodyState->mirrorMario = gCurGraphNodeObject == &gMirrorMario[plrIdx];
+        bodyState->mirrorMario = plrIdx < MAX_PLAYERS && gCurGraphNodeObject == &gMirrorMario[plrIdx];
     }
 
-    bool marioActive = gMarioObjects[plrIdx] != NULL && gMarioObjects[plrIdx]->activeFlags != ACTIVE_FLAG_DEACTIVATED;
+    /* un impostor (índice ≥ MAX_PLAYERS) no está en gMarioObjects: leerlo se salía del arreglo */
+    bool marioActive = plrIdx >= MAX_PLAYERS
+        || (gMarioObjects[plrIdx] != NULL && gMarioObjects[plrIdx]->activeFlags != ACTIVE_FLAG_DEACTIVATED);
 
     if (callContext == GEO_CONTEXT_RENDER) {
         struct GraphNodeRotation* rotNode = (struct GraphNodeRotation*) node->next;
@@ -578,10 +611,10 @@ Gfx* geo_switch_mario_hand(s32 callContext, struct GraphNode* node, UNUSED Mat4*
  * (such as in the mirror room) results in a faster and desynced punch / kick animation.
  */
 Gfx* geo_mario_hand_foot_scaler(s32 callContext, struct GraphNode* node, UNUSED Mat4* mtx) {
-    static s16 sMarioAttackAnimCounter[MAX_PLAYERS] = { 0 };
+    static s16 sMarioAttackAnimCounter[MAX_PLAYERS + SMNET_RENDER_EXTRA] = { 0 };
     struct GraphNodeGenerated* asGenerated = (struct GraphNodeGenerated*) node;
     struct GraphNodeScale* scaleNode = (struct GraphNodeScale*) node->next;
-    u8 index = geo_get_processing_object_index();
+    u16 index = geo_get_processing_object_index();
     struct MarioBodyState* bodyState = geo_get_body_state();
 
     if (callContext == GEO_CONTEXT_RENDER) {
@@ -803,7 +836,7 @@ Gfx* geo_mirror_mario_backface_culling(s32 callContext, struct GraphNode* node, 
 
 static struct PlayerColor geo_mario_get_player_color(const struct PlayerPalette *palette) {
     struct PlayerColor color = { 0 };
-    u8 index = geo_get_processing_object_index();
+    u16 index = geo_get_processing_object_index();
     struct MarioBodyState* bodyState = &gBodyStates[index];
     for (s32 part = 0; part != PLAYER_PART_MAX; ++part) {
         color.parts[part] = (Lights1) gdSPDefLights1(
@@ -822,7 +855,7 @@ static struct PlayerColor geo_mario_get_player_color(const struct PlayerPalette 
 }
 
 void get_player_color(u8 index, u8 part, f32 *out) {
-    const struct PlayerPalette *palette = &gNetworkPlayers[index].overridePalette;
+    const struct PlayerPalette *palette = geo_player_palette(index);
     out[0] = palette->parts[part][0] / 255.0f;
     out[1] = palette->parts[part][1] / 255.0f;
     out[2] = palette->parts[part][2] / 255.0f;
@@ -853,16 +886,16 @@ static Gfx *geo_mario_create_player_colors_dl(s32 index, Gfx *capEnemyGfx, Gfx *
 Gfx* geo_mario_set_player_colors(s32 callContext, struct GraphNode* node, UNUSED Mat4* c) {
     struct GraphNodeGenerated* asGenerated = (struct GraphNodeGenerated*) node;
     Gfx* gfx = NULL;
-    u8 index = geo_get_processing_object_index();
+    u16 index = geo_get_processing_object_index();
 
-    struct PlayerColor color = geo_mario_get_player_color(&gNetworkPlayers[index].overridePalette);
+    struct PlayerColor color = geo_mario_get_player_color(geo_player_palette(index));
     gNetworkPlayerColors[index] = color;
 
     struct MarioBodyState* bodyState = &gBodyStates[index];
 
     // update mirrorMario only if it's a valid Mario
     if (geo_get_mario_object() != NULL) {
-        bodyState->mirrorMario = gCurGraphNodeObject == &gMirrorMario[index];
+        bodyState->mirrorMario = index < MAX_PLAYERS && gCurGraphNodeObject == &gMirrorMario[index];
     }
 
     if (callContext == GEO_CONTEXT_RENDER) {
@@ -885,12 +918,12 @@ Gfx* geo_mario_set_player_colors(s32 callContext, struct GraphNode* node, UNUSED
 
 Gfx* geo_mario_cap_display_list(s32 callContext, struct GraphNode* node, UNUSED Mat4* c) {
     if (callContext != GEO_CONTEXT_RENDER) { return NULL; }
-    u8 localIndex = geo_get_processing_object_index();
+    u16 localIndex = geo_get_processing_object_index();
 
-    struct PlayerColor color = geo_mario_get_player_color(&gNetworkPlayers[localIndex].overridePalette);
+    struct PlayerColor color = geo_mario_get_player_color(geo_player_palette(localIndex));
     gNetworkPlayerColors[localIndex] = color;
 
-    u8 charIndex = gNetworkPlayers[localIndex].overrideModelIndex;
+    u8 charIndex = geo_player_model(localIndex);
     if (charIndex >= CT_MAX) { charIndex = 0; }
     struct Character* character = &gCharacters[charIndex];
 

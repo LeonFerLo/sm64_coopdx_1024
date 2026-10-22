@@ -2,6 +2,9 @@
 #include "../network.h"
 #include "pc/lua/smlua.h"
 #include "pc/debuglog.h"
+#ifdef SMNET
+#include "pc/network/smnet/ns_smnet.h"
+#endif
 
 /////////////////////////////////////////////////////////////
 
@@ -72,6 +75,10 @@ void network_receive_lua_sync_table(struct Packet* p) {
     if (!packet_read_lnt(p, &lntValue)) { goto cleanup; }
 
     if (p->error) { LOG_ERROR("Packet read error"); return; }
+#ifdef SMNET
+    /* modo masivo: solo vale la tabla propia del que la manda, puesta en su slot */
+    if (ns_smnet_massive() && !ns_smnet_lua_sync_keys(p->localIndex, lntKeyCount, lntKeys)) { goto cleanup; }
+#endif
     smlua_set_sync_table_field_from_network(seq, modRemoteIndex, lntKeyCount, lntKeys, &lntValue);
 
 cleanup:

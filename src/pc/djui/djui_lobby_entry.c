@@ -66,13 +66,20 @@ struct DjuiLobbyEntry* djui_lobby_entry_create(struct DjuiBase* parent, char* ho
 
     u8 numColumns = 3;
     f32 x = 0;
+    /* la columna de jugadores se ensancha para "1/1024" o "1024/1024" (partidas masivas),
+       quitándole a la del modo; con "16/16" queda como siempre */
+    f32 playersWidth = 0.15f;
+    if (players) {
+        f32 need = 0.03f * (f32)strlen(players);
+        if (need > playersWidth) { playersWidth = (need > 0.28f) ? 0.28f : need; }
+    }
     for (int i = 0; i < numColumns; i++) {
         char* msg = NULL;
         f32 width = 0;
         switch (i) {
             case 0: msg = host; width = 0.4f; break;
-            case 1: msg = mode; width = 0.45f; break;
-            case 2: msg = players;  width = 0.15f; break;
+            case 1: msg = mode; width = 0.6f - playersWidth; break;
+            case 2: msg = players;  width = playersWidth; break;
         }
         struct DjuiText* text = djui_text_create(&lobbyEntry->base, msg);
 

@@ -16,6 +16,14 @@
 
 static bool hideMessage = false;
 
+void djui_panel_do_host(bool reconnecting, bool playSound);
+static int sForceSystem = -1;   /* Join masivo: arrancar como Host con el sistema de sockets (smnet) */
+void djui_panel_do_host_with_system(bool reconnecting, bool playSound, int system) {
+    sForceSystem = system;
+    djui_panel_do_host(reconnecting, playSound);
+    sForceSystem = -1;
+}
+
 void djui_panel_do_host(bool reconnecting, bool playSound) {
     stop_demo(NULL);
     djui_panel_shutdown();
@@ -28,7 +36,7 @@ void djui_panel_do_host(bool reconnecting, bool playSound) {
 #endif
     if (configNetworkSystem == NS_COOPNET && configAmountOfPlayers == 1) { configNetworkSystem = NS_SOCKET; }
     if (configNetworkSystem >= NS_MAX) { configNetworkSystem = NS_MAX; }
-    network_set_system(configNetworkSystem);
+    network_set_system(sForceSystem >= 0 ? (enum NetworkSystemType)sForceSystem : configNetworkSystem);
 
     network_init(NT_SERVER, reconnecting);
     djui_panel_modlist_create(NULL);

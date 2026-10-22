@@ -7,6 +7,14 @@
 #include <ultra64.h>
 #include "macros.h"
 #include "pc/network/version.h"
+
+/* modo masivo (fork sm64coopdx-1024): lugares extra en las tablas de dibujo de Mario para los
+   impostores, después de los MAX_PLAYERS de siempre */
+#ifdef SMNET
+#define SMNET_RENDER_EXTRA 1024  /* impostores: uno por jugador posible de smnet (SMNET_MAX_PLAYERS) */
+#else
+#define SMNET_RENDER_EXTRA 0
+#endif
 #include "pc/platform.h"
 
 // Certain functions are marked as having return values, but do not

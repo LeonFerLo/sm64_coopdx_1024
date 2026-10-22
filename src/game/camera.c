@@ -133,7 +133,7 @@ Vec3f sOldFocus;
  * Global array of PlayerCameraState.
  * L is real.
  */
-struct PlayerCameraState gPlayerCameraState[MAX_PLAYERS];
+struct PlayerCameraState gPlayerCameraState[MAX_PLAYERS + SMNET_RENDER_EXTRA];
 /**
  * Direction controlled by player 2, moves the focus during the credits.
  */

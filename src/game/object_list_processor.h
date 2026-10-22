@@ -23,7 +23,11 @@
 /**
  * The maximum number of objects that can be loaded at once.
  */
+#ifdef SMNET
+#define OBJECT_POOL_CAPACITY 2400   /* modo masivo: 1200 del juego + lugar para los impostores */
+#else
 #define OBJECT_POOL_CAPACITY 1200
+#endif
 
 /**
  * Every object is categorized into an object list, which controls the order
