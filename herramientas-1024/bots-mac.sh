@@ -4,9 +4,9 @@
 # Desde la carpeta del juego:
 #   HOST=192.168.1.41 PLANTILLA=plantilla.bin sh herramientas-1024/bots-mac.sh
 # Variables (todas opcionales salvo HOST y PLANTILLA):
-#   TOTAL=512 PROCESOS=2 HZ=15 PUERTO=7777 ENTRADA=40 SALTOS=8 CHAT=0 AREA= SEGUNDOS= SNS=
+#   TOTAL=512 PROCESOS=2 HZ=8 (como el juego: ~8 PLAYER por segundo) PUERTO=7777 ENTRADA=40 SALTOS=8 CHAT=0 AREA= SEGUNDOS= SNS=
 # Ctrl+C corta todos. Cada proceso deja su salida en bots-mac-N.log.
-TOTAL=${TOTAL:-512}; PROCESOS=${PROCESOS:-2}; HZ=${HZ:-15}; PUERTO=${PUERTO:-7777}
+TOTAL=${TOTAL:-512}; PROCESOS=${PROCESOS:-2}; HZ=${HZ:-8}; PUERTO=${PUERTO:-7777}
 ENTRADA=${ENTRADA:-40}; SALTOS=${SALTOS:-8}; CHAT=${CHAT:-0}
 [ -n "$HOST" ] || { echo "falta HOST=ip del host (la PC con Windows)"; exit 1; }
 [ -n "$PLANTILLA" ] && [ -f "$PLANTILLA" ] || { echo "falta PLANTILLA=archivo (la grabada con COOPDX_SMNET_GRABAR, copiala de la PC)"; exit 1; }

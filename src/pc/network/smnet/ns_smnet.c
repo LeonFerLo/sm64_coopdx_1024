@@ -109,7 +109,7 @@ static struct { unsigned long long tx, rx, ajeno, desconocido, grande, malo; } s
 #define SLOT_SWAP_MIN   400.f   /* … y por lo menos 400 unidades más cerca */
 #define SLOT_SWAPS_PER_TICK 4
 #define SLOT_EVERY_MS   250
-#define SLOT_FULL_K     (MAX_PLAYERS - 1 + 9)   /* vecinos con estado rico (PLAYER) que manda el SN: 15 slots + 9 de margen */
+#define SLOT_FULL_K     (MAX_PLAYERS - 1 + 4)   /* vecinos con estado rico (PLAYER) que manda el SN: 15 slots + 4 de margen (el SN ya los mantiene; cada rico de más le cuesta subida al SN en una multitud) */
 static bool sMassive = false;
 static bool sMassiveJoin = false;
 /* ---- el host de la partida: tiene una clave propia (smnet-host.key, en la carpeta del usuario)
