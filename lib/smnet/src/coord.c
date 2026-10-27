@@ -272,6 +272,10 @@ static int elect(smnet_node_t* n, double now) {
 
 static void sn_dead(smnet_node_t* n, uint16_t id, double now) {
     coord_t* c = n->co;
+    /* el coordinador no se da por muerto a sí mismo: si sus peers se van de él por lento (un host
+       a 15 FPS con 1000 jugadores), se mudan y listo. Antes se borraba su propio lugar, al volver a
+       entrar recibía otro id y una réplica tomaba el control */
+    if (id == n->id) return;
     n->stats.co_sn_deaths++;
     free_node(c, id, now);
     for (int i = 0; i < SMNET_MAX_PLAYERS; i++) {
@@ -974,7 +978,7 @@ int coord_receive(smnet_node_t* n, const smnet_addr_t* from, const smnet_hdr_t* 
         if (r->err) return 0;
         if (epoch > c->epoch) { step_down(n); return 1; }
         p->last_seen_ms = now;
-        if (alive_sn(c, old) && old != nw) {
+        if (alive_sn(c, old) && old != nw && old != n->id) {
             /* dos peers distintos dicen que este SN dejó de responder: se lo da por caído ya */
             cnode_t* o = &c->nodes[old];
             if (now - o->suspect_ms > 2000) o->suspects = 0;

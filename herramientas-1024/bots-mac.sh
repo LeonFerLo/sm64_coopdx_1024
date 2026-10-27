@@ -11,7 +11,8 @@ ENTRADA=${ENTRADA:-40}; SALTOS=${SALTOS:-8}; CHAT=${CHAT:-0}
 [ -n "$HOST" ] || { echo "falta HOST=ip del host (la PC con Windows)"; exit 1; }
 [ -n "$PLANTILLA" ] && [ -f "$PLANTILLA" ] || { echo "falta PLANTILLA=archivo (la grabada con COOPDX_SMNET_GRABAR, copiala de la PC)"; exit 1; }
 BIN=./smnet-mario-bots
-if [ ! -x "$BIN" ]; then
+# se recompila si falta o si cambió smnet (los bots también pueden ser réplica o coordinador)
+if [ ! -x "$BIN" ] || [ -n "$(find lib/smnet/src -newer "$BIN" -name '*.c' 2>/dev/null | head -1)" ]; then
   echo "== compilando los bots"
   sh "$(dirname "$0")/compilar-bots.sh" > /dev/null || exit 1
 fi
