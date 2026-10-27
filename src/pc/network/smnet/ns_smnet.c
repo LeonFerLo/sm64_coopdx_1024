@@ -136,6 +136,7 @@ static unsigned sHostPort = 0;
 static struct { smnet_addr_t a; double seen; } sPeers[32];   /* de quiénes llega tráfico (para volver) */
 static double sStateSaved = 0;
 static struct { float x, y, z, fwd, vy; int16_t yaw; uint8_t pose, sflags, frame; double seen; } sEnt[SMNET_MAX_PLAYERS];
+static double sBlobAt[SMNET_MAX_PLAYERS];   /* último PLAYER (estado rico) de cada uno: si el SN dejó de mandarlo, su slot está congelado */
 static int8_t sSlotOf[SMNET_MAX_PLAYERS];          /* slot de cada id (0 = ninguno) */
 static double sSlotSince[MAX_PLAYERS];
 static bool sSlotReady[MAX_PLAYERS];               /* ya llegó su primer PLAYER (hasta entonces se lo sigue dibujando como impostor) */
@@ -824,7 +825,11 @@ static void slots_update(double now) {
         }
         for (int j = ci; j < nc && cd[j] < wd; j++) rank++;
         bool clearly = cd[ci] < wd * SLOT_SWAP_FACTOR && wd - cd[ci] > SLOT_SWAP_MIN;
-        bool starved = rank >= SLOT_FULL_K - 1 && cd[ci] < wd;
+        /* congelado: el SN ya no le manda su PLAYER (quedó fuera de sus vecinos ricos). Se mira lo
+           que llega de verdad y no un ranking propio: con cientos amontonados, el ranking de uno y
+           el del SN no coinciden y los slots rotaban sin parar (parpadeos, pieles cambiadas) */
+        uint16_t wid = sIds[worst];
+        bool starved = cd[ci] < wd && ((wid < SMNET_MAX_PLAYERS && now - sBlobAt[wid] > 800.0) || rank >= SLOT_FULL_K + 8);
         if (!clearly && !starved) break;
         slot_assign(worst, cand[ci], now);
         ci++;
@@ -2087,7 +2092,7 @@ static void on_blob(void* user, uint16_t id, uint8_t seq, const uint8_t* blob, i
     (void)user; (void)seq; (void)now;
     uint8_t gi;
     uint16_t ak;
-    if (sMassive) { if (id < SMNET_MAX_PLAYERS && ns_smnet_mod_hidden(id)) return; if (id < SMNET_MAX_PLAYERS) sEnt[id].seen = now; massive_inject(id, blob, len); return; }
+    if (sMassive) { if (id < SMNET_MAX_PLAYERS && ns_smnet_mod_hidden(id)) return; if (id < SMNET_MAX_PLAYERS) { sEnt[id].seen = now; sBlobAt[id] = now; } massive_inject(id, blob, len); return; }
     if (!player_pkt_info(blob, len, &gi, &ak)) { sPl.malo++; return; }
     if (gNetworkPlayerLocal == NULL || gi == gNetworkPlayerLocal->globalIndex) return;
     struct NetworkPlayer* np = network_player_from_global_index(gi);

@@ -318,6 +318,9 @@ static void rerank(smnet_node_t* n, double now) {
         ent_t* ev = &s->ents[v];
         if (!ev->hosted || !ev->v) continue;
         view_t* vw = ev->v;
+        uint16_t prevfull[SMNET_MAX_FULL]; int nprev = vw->nfull;
+        if (nprev > SMNET_MAX_FULL) nprev = SMNET_MAX_FULL;
+        memcpy(prevfull, vw->full, sizeof prevfull[0] * (size_t)nprev);
         vw->ncand = 0;
         vw->nfull = 0;
         if (now - ev->last_up_ms > c->hosted_expire_ms) continue;
@@ -344,6 +347,14 @@ static void rerank(smnet_node_t* n, double now) {
            un vecino que entra al grupo cercano ya llegue a buena tasa mientras se renueva */
         int s1 = k1 + k1 / 2, s2 = k2 + k2 / 4;
         int use_dset = vw->ndset > 0 && now < vw->dset_until;
+        /* histéresis de los ricos: el que ya tenía estado rico lo mantiene mientras siga entre los
+           1,5×k1 más cercanos (con cientos amontonados, el puesto k1 cambia a cada vuelta y el
+           viewer veía rotar sus slots); los lugares que quedan, a los más cercanos */
+        for (int k = 0; k < m1 && vw->nfull < c->full_k; k++) {
+            uint16_t id = s->tmp[k].id;
+            if (s->tmp[k].d > r2) continue;
+            for (int j = 0; j < nprev; j++) if (prevfull[j] == id) { vw->full[vw->nfull++] = id; s->want[id] |= WANT_RICH; break; }
+        }
         for (int k = 0; k < cnt; k++) {
             uint16_t id = s->tmp[k].id;
             vw->cand[k] = id;
@@ -362,8 +373,9 @@ static void rerank(smnet_node_t* n, double now) {
             uint8_t* w = &s->want[id];
             if ((*w & 0x7F) < stier) *w = (uint8_t)((*w & WANT_RICH) | stier);
             if (k < k1 && vw->nfull < c->full_k && s->tmp[k].d <= r2) {
-                vw->full[vw->nfull++] = id;
-                *w |= WANT_RICH;
+                int dup = 0;
+                for (int j = 0; j < vw->nfull; j++) if (vw->full[j] == id) { dup = 1; break; }
+                if (!dup) { vw->full[vw->nfull++] = id; *w |= WANT_RICH; }
             }
         }
         vw->ncand = cnt;
