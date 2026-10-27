@@ -5,7 +5,7 @@
 set -e
 H=$(cd "$(dirname "$0")" && pwd)
 L=lib/smnet
-[ -d "$L/src" ] || { echo "correlo desde juego/sm64coopdx (falta $L)"; exit 1; }
+[ -d "$L/src" ] || { echo "correlo desde la carpeta del juego (falta $L)"; exit 1; }
 EXTRA="-lm"
 case "$(uname -s)" in MINGW*|MSYS*|CYGWIN*) EXTRA="-lws2_32 -lbcrypt"; OUT=smnet-mario-bots.exe ;; *) OUT=smnet-mario-bots ;; esac
 gcc -O2 -std=gnu11 -I "$L/include" -I "$L/src" -I "$L/third_party/monocypher" \
