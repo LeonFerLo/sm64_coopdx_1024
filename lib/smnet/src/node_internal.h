@@ -230,6 +230,7 @@ typedef struct {
     int       nreplicas;
     int       my_rank;                 /* si soy réplica */
     double    last_hb_rx;              /* réplica: último COORD_HB */
+    double    last_tick;               /* réplica: última vuelta de coord_update (para no culpar al coordinador de una pausa propia) */
     double    probe_at;                /* réplica sin latidos: cuándo se le preguntó al coordinador si sigue */
     uint8_t   probe_heard;             /* … y si contestó (entonces no se toma el control) */
     double    last_hb_tx, last_sync, last_rebalance, last_ondemand, next_rebalance;

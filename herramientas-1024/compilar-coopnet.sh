@@ -5,7 +5,8 @@
 # juego compila pero se rompe al usar CoopNet.
 set -e
 J=$(pwd)
-C=$(cd "$(dirname "$0")/../servidor/coopnet" 2>/dev/null && pwd || cd "$(dirname "$0")/../../coopnet" && pwd)
+H=$(cd "$(dirname "$0")" && pwd)
+if [ -d "$H/../servidor/coopnet" ]; then C=$(cd "$H/../servidor/coopnet" && pwd); else C=$(cd "$H/../../coopnet" && pwd); fi
 [ -d "$J/lib/coopnet" ] || J=$(cd "$(dirname "$0")/.." && pwd)
 cd "$C"
 if [ "$(uname -s)" = Darwin ]; then

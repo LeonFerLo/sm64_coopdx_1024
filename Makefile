@@ -57,6 +57,8 @@ SMNET ?= 0
 # el fork de 1024 (SMNET=1) no lleva el actualizador oficial: instalaría la versión oficial encima
 ifeq ($(SMNET),1)
   UPDATER ?= 0
+  # en Mac, sin el .app (necesita el actualizador y saca el juego de build/us_pc, lejos de lang/)
+  USE_APP ?= 0
 else
   UPDATER ?= 1
 endif

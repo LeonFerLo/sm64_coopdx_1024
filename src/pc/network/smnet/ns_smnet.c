@@ -123,6 +123,7 @@ static bool sGamePubOk = false, sGameSigOk = false;
 static bool sOrigHost = false;                /* este es el host de la partida (le dio Host, no Join) */
 static uint16_t sHostId = SMNET_NO_ID;        /* el host verificado, si está (y no es uno mismo) */
 static uint16_t sClaimedAs = SMNET_NO_ID;     /* id con el que uno ya anunció que es el host */
+static double sClaimAt = 0; static int sClaimN = 0;   /* reenvíos del anuncio (se pierde si los demás todavía no conocen el id nuevo) */
 static double sHostConnAt = 0;                /* cuándo entró (el host que vuelve espera la tabla global) */
 static double sEndAt = 0;                     /* el host finaliza: se sale después de mandar el aviso */
 static bool sEndRx = false, sEnding = false;
@@ -2559,7 +2560,14 @@ static void ns_smnet_update(void) {
             smnet_node_info_t inf; smnet_node_info(sNode, &inf);
             if (inf.status == SMNET_PEER_CONNECTED && sRejoinN == 0) {
                 if (sHostConnAt <= 0) sHostConnAt = now;
-                if (sClaimedAs != inf.id) { sClaimedAs = inf.id; host_claim_send(SMNET_TO_ALL, 0); smlog("host: anunciado como smnet:%u", inf.id); }
+                if (sClaimedAs != inf.id) { sClaimedAs = inf.id; host_claim_send(SMNET_TO_ALL, 0); sClaimAt = now; sClaimN = 0; smlog("host: anunciado como smnet:%u", inf.id); }
+                else {
+                    /* otra vez a los 2, 5, 10 y 20 s del cambio de id, y después cada 30 s: tras un
+                       cambio de coordinador los demás pueden descartar el primero (id que todavía no conocen) */
+                    static const double kAgain[] = { 2000, 5000, 10000, 20000 };
+                    double wait = sClaimN < 4 ? kAgain[sClaimN] - (sClaimN ? kAgain[sClaimN - 1] : 0) : 30000;
+                    if (now - sClaimAt > wait) { host_claim_send(SMNET_TO_ALL, 0); sClaimAt = now; sClaimN++; }
+                }
                 if (now - sStateSaved > 10000) { sStateSaved = now; game_state_save(now); }
             } else if (inf.status != SMNET_PEER_CONNECTED) { sHostConnAt = 0; sClaimedAs = SMNET_NO_ID; }
         }

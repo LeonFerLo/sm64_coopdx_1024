@@ -60,7 +60,8 @@ void smnet_node_cfg_default(smnet_node_cfg_t* c) {
     k->peer_dead_ms = 15000;
     k->replicas = 2;
     k->hb_every_ms = 250;
-    k->takeover_ms = 750;
+    k->takeover_ms = 2000;     /* con 750, una red ocupada (el host con 1000 jugadores) o un cuadro
+                                  largo de la réplica partían la partida en dos */
     k->sync_every_ms = 2000;
     k->first_rebalance_ms = 2000;
 }

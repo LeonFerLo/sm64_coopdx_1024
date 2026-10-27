@@ -1041,6 +1041,10 @@ void coord_update(smnet_node_t* n, double now) {
     coord_t* c = n->co;
     const smnet_coord_cfg_t* k = &n->cfg.coord;
     if (c->role == SMNET_COORD_REPLICA) {
+        /* si esta réplica estuvo parada (un cuadro largo del juego, el sistema sin CPU), el tiempo
+           sin latidos es culpa suya: no cuenta para tomar el control */
+        if (c->last_tick > 0 && now - c->last_tick > 200 && c->last_hb_rx > 0) c->last_hb_rx += now - c->last_tick;
+        c->last_tick = now;
         if (c->last_hb_rx > 0 && now - c->last_hb_rx > k->takeover_ms * (c->my_rank + 1)) {
             if (n->epoch_seen > c->epoch) { c->role = SMNET_COORD_NONE; c->last_hb_rx = 0; c->probe_at = 0; }   /* ya hay otro */
             /* antes de tomar el control, preguntarle al coordinador: si lo que pasó es que esta
@@ -1048,8 +1052,8 @@ void coord_update(smnet_node_t* n, double now) {
                más latidos) pero sigue vivo; tomar el control partiría la partida en dos */
             else if (c->probe_at <= 0) { c->probe_at = now; c->probe_heard = 0; peer_probe_coord(n, now); }
             else if (c->probe_heard) { c->role = SMNET_COORD_NONE; c->last_hb_rx = 0; c->probe_at = 0; }
-            else if (now - c->probe_at > 1500) { c->probe_at = 0; takeover(n, now); }
-            else if (now - c->probe_at > 500 && now - c->probe_at < 520) peer_probe_coord(n, now);
+            else if (now - c->probe_at > 3000) { c->probe_at = 0; takeover(n, now); }
+            else if ((now - c->probe_at > 1000 && now - c->probe_at < 1030) || (now - c->probe_at > 2000 && now - c->probe_at < 2030)) peer_probe_coord(n, now);
         }
         return;
     }
