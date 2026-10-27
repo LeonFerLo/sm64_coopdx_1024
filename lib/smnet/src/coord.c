@@ -984,7 +984,10 @@ int coord_receive(smnet_node_t* n, const smnet_addr_t* from, const smnet_hdr_t* 
             if (now - o->suspect_ms > 2000) o->suspects = 0;
             o->suspects++;
             o->suspect_ms = now;
-            if (o->suspects >= 2 && now - o->last_report_ms > 600) sn_dead(n, old, now);
+            /* se lo da por caído solo si además dejó de reportarle al coordinador: si reporta, está
+               vivo y lento, y sus peers ya se están mudando (antes caían ~1 SN por segundo en
+               cascada con 1000 jugadores) */
+            if (o->suspects >= 3 && now - o->last_report_ms > 2.5 * n->cfg.sn.report_every_ms) sn_dead(n, old, now);
         }
         if (alive_sn(c, nw)) p->primary = nw;
         p->backup = SMNET_NO_ID;

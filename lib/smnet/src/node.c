@@ -10,7 +10,7 @@ void smnet_node_cfg_default(smnet_node_cfg_t* c) {
     c->upload_kbps = 10000;
     c->nat = SMNET_NAT_CONE;
     c->hello_retry_ms = 500;
-    c->primary_timeout_ms = 750;
+    c->primary_timeout_ms = 1100;   /* con 750, un SN cargado (cientos de bots en una PC) perdía a sus peers en masa */
     c->backup_dead_ms = 3000;
     c->backup_hb_ms = 1000;
     c->metrics_every_ms = 10000;
