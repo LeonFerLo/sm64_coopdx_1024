@@ -829,7 +829,7 @@ static void slots_update(double now) {
            que llega de verdad y no un ranking propio: con cientos amontonados, el ranking de uno y
            el del SN no coinciden y los slots rotaban sin parar (parpadeos, pieles cambiadas) */
         uint16_t wid = sIds[worst];
-        bool starved = cd[ci] < wd && ((wid < SMNET_MAX_PLAYERS && now - sBlobAt[wid] > 800.0) || rank >= SLOT_FULL_K + 8);
+        bool starved = cd[ci] < wd && ((wid < SMNET_MAX_PLAYERS && now - sBlobAt[wid] > 1200.0) || rank >= SLOT_FULL_K + 8);
         if (!clearly && !starved) break;
         slot_assign(worst, cand[ci], now);
         ci++;
@@ -2116,6 +2116,10 @@ static void log_status(const char* why) {
           (unsigned long long)st->app_tx, (unsigned long long)st->app_rx, (unsigned long long)st->app_rate_limited,
           (unsigned long long)st->unauthorized, sNumPending);
     smlog("  lista de la partida: %d jugadores (contándose)", sKnownCount + 1);
+    if (inf.coord_role == SMNET_COORD_ACTIVE)
+        smlog("  coordinador: SN promovidos %llu, degradados %llu, caídos %llu, mudanzas %llu, tomas de control %llu",
+              (unsigned long long)st->co_promotions, (unsigned long long)st->co_demotions, (unsigned long long)st->co_sn_deaths,
+              (unsigned long long)st->co_moves, (unsigned long long)st->co_takeovers);
     smlog("  PLAYER por estado: publicados=%llu recibidos=%llu (blobs=%llu) sin_jugador=%llu ajenos=%llu grandes=%llu malos=%llu",
           sPl.tx, sPl.rx, (unsigned long long)st->blob_updates, sPl.desconocido, sPl.ajeno, sPl.grande, sPl.malo);
     if (sMassive) {

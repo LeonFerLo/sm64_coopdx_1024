@@ -233,8 +233,22 @@ void node_stop_sn(smnet_node_t* n) {
     n->sn = NULL;
 }
 
+/* SN de la lista vigente, o que salió hace menos de 8 s: con cambios seguidos de SN (multitudes),
+   la lista de uno va atrás y se descartaban los reenvíos de un SN recién bajado (todos los
+   impostores de su zona desaparecían unos segundos) */
+int node_is_sn_or_recent(const smnet_node_t* n, uint16_t id) {
+    for (int i = 0; i < n->nsn; i++) if (n->snlist[i].id == id) return 1;
+    return id < SMNET_MAX_PLAYERS && n->sn_gone_ms[id] > 0 && n->now - n->sn_gone_ms[id] < 8000.0;
+}
+
 void node_set_snlist(smnet_node_t* n, const sninfo_t* list, int cnt) {
     if (cnt > SMNET_MAX_SN) cnt = SMNET_MAX_SN;
+    for (int i = 0; i < n->nsn; i++) {
+        uint16_t id = n->snlist[i].id; int still = 0;
+        for (int j = 0; j < cnt; j++) if (list[j].id == id) { still = 1; break; }
+        if (!still && id < SMNET_MAX_PLAYERS) n->sn_gone_ms[id] = n->now > 0 ? n->now : 1;
+    }
+    for (int j = 0; j < cnt; j++) if (list[j].id < SMNET_MAX_PLAYERS) n->sn_gone_ms[list[j].id] = 0;
     memcpy(n->snlist, list, sizeof(sninfo_t) * (size_t)cnt);
     n->nsn = cnt;
     if (n->sn) {

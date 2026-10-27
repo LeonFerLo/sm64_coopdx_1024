@@ -295,6 +295,7 @@ struct smnet_node {
     int                have_coord;
     smnet_addr_t       bootstrap;
     sninfo_t           snlist[SMNET_MAX_SN];
+    double             sn_gone_ms[SMNET_MAX_PLAYERS];   /* cuándo salió cada uno de la lista de SN (gracia para sus reenvíos en vuelo) */
     int                nsn;
     peer_t             peer;
     sn_t*              sn;
@@ -321,6 +322,7 @@ void node_send_coord(smnet_node_t* n, const uint8_t* d, int len);
 void node_hdr(smnet_node_t* n, wbuf_t* w, uint8_t type, uint8_t flags, uint16_t seq);
 void node_become_sn(smnet_node_t* n, double now);
 void node_stop_sn(smnet_node_t* n);
+int  node_is_sn_or_recent(const smnet_node_t* n, uint16_t id);
 void node_set_snlist(smnet_node_t* n, const sninfo_t* list, int cnt);
 void node_set_coord(smnet_node_t* n, uint16_t id, const smnet_addr_t* addr, uint32_t epoch);
 void node_punch(smnet_node_t* n, const smnet_addr_t* to);

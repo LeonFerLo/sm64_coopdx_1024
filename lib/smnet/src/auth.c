@@ -120,10 +120,7 @@ int auth_check_new_coord(const smnet_node_t* n, const smnet_addr_t* from, const 
     return game_check(n, sig, "smnet-newcoord", body, 38);
 }
 
-static int is_sn_id(const smnet_node_t* n, uint16_t id) {
-    for (int i = 0; i < n->nsn; i++) if (n->snlist[i].id == id) return 1;
-    return 0;
-}
+static int is_sn_id(const smnet_node_t* n, uint16_t id) { return node_is_sn_or_recent(n, id); }
 
 /* ¿Se acepta este mensaje de esta sesión? (no se llama para la entrega local) */
 int auth_allowed(smnet_node_t* n, const smnet_addr_t* from, const smnet_hdr_t* h) {

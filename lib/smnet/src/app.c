@@ -158,10 +158,7 @@ static void sn_fanout(smnet_node_t* n, const appmsg_t* m) {
     }
 }
 
-static int is_listed_sn(const smnet_node_t* n, uint16_t id) {
-    for (int i = 0; i < n->nsn; i++) if (n->snlist[i].id == id) return 1;
-    return 0;
-}
+static int is_listed_sn(const smnet_node_t* n, uint16_t id) { return node_is_sn_or_recent(n, id); }
 
 static int up_one(smnet_node_t* n, const smnet_hdr_t* h, rbuf_t* r, int local, double now) {
     appmsg_t m;
